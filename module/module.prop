@@ -4,4 +4,4 @@ version=v0.1.0
 versionCode=100
 author=benja
 description=Orchestrator for a bring-your-own STRONG stack: drives your own PlayIntegrityFork + JingMatrix TEESimulator (+ HMA-OSS). Bundles no modules. Mirrors the PIF fingerprint into TEESimulator, builds its target list, syncs the security patch, writes the root-of-trust overrides and fetches your keybox.
-updateJson=https://raw.githubusercontent.com/REPLACE_OWNER/keepstrong/main/update.json
+updateJson=https://raw.githubusercontent.com/Rev4N1/keepstrong/main/update.json
