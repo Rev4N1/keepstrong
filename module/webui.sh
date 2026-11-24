@@ -44,6 +44,7 @@ case "$cmd" in
     printf '"auto_fp_sync":%s,' "$(_bool "$(ks_get auto_fp_sync 0)")"
     printf '"reassert_pif_flags":%s,' "$(_bool "$(ks_get reassert_pif_flags 0)")"
     printf '"run_pif_action":%s,' "$(_bool "$(ks_get run_pif_action 0)")"
+    printf '"auto_target":%s,' "$(_bool "$(ks_get auto_target 0)")"
     printf '"manage_hma":%s,' "$(_bool "$(ks_get manage_hma 0)")"
     printf '"restart_gms_on_sync":%s,' "$(_bool "$(ks_get restart_gms_on_sync 0)")"
     printf '"spoof_boot_state":%s,' "$(_bool "$(ks_get spoof_boot_state 0)")"

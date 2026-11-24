@@ -1,3 +1,12 @@
+# v0.2.1
+
+- **Auto-target every user app.** Like AlwaysStrong/Specter, both TEESimulator
+  and HMA-OSS now target every installed user app (`pm list packages -3`) plus
+  the Play Integrity core, so new installs are covered automatically. Xposed /
+  LSPosed managers are excluded (attesting through a hooked process breaks
+  STRONG). Toggle `auto_target` (WebUI "Auto-target all apps").
+- Confirmed the Action button runs PlayIntegrityFork's own `action.sh` first.
+
 # v0.2.0
 
 Aligned to the latest TEESimulator, one-tap full pipeline, and HMA-OSS config.

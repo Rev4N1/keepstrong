@@ -23,8 +23,8 @@ same minus the PIF fetch:
 1. **Keybox** — fetches a keybox from **your** endpoints (a list, tried in order), validates it, installs it at `/data/adb/teesim/keybox.xml`. Ships no server; raw or base64-encoded XML both accepted.
 2. **PIF flags** — re-asserts PlayIntegrityFork's STRONG spoof flags (its autopif keeps resetting `spoofVendingFinger`), version-aware (off on Android ≤ 12L). inject-s is left to manage its own flags.
 3. **Security patch** — derives the attested patch from the PIF fingerprint; TEESimulator's patch level is set to **match the PIF key** on all three partitions.
-4. **TEESimulator config** — mirrors the PIF-spoofed Pixel identity (brand/model/device/product/manufacturer + OS version + patch) into `/data/adb/teesim/config.json`, fills the target-app list, sets the mode, and writes `/data/adb/teesim/overrides.json` to force a locked/Verified root of trust with a stable non-zero key+hash (so an unlocked bootloader doesn't attest a zeroed ORANGE root).
-5. **HMA-OSS** (optional) — merges a managed blacklist template into your **existing** HMA-OSS config so the target apps can't see your root manager / modules / Xposed, preserving your own templates, scope and `configVersion`. Skips cleanly if it can't parse the config.
+4. **TEESimulator config** — mirrors the PIF-spoofed Pixel identity (brand/model/device/product/manufacturer + OS version + patch) into `/data/adb/teesim/config.json`, targets **every installed user app** (`pm list packages -3`, Xposed managers excluded) plus the Play Integrity core, sets the mode, and writes `/data/adb/teesim/overrides.json` to force a locked/Verified root of trust with a stable non-zero key+hash (so an unlocked bootloader doesn't attest a zeroed ORANGE root).
+5. **HMA-OSS** (optional) — merges a managed blacklist template into your **existing** HMA-OSS config so **every user app** is blinded to your root manager / modules / Xposed, preserving your own templates, scope and `configVersion`. Skips cleanly if it can't parse the config.
 6. **Restart** — bounces DroidGuard + Play Store so the new identity takes effect without a reboot.
 
 It never launches TEESimulator's daemon (its own module does that), never
@@ -66,6 +66,7 @@ Everything lives in `/data/adb/keepstrong/`:
 | `auto_fp_sync` | 1 | Mirror PIF identity + patch into TEESimulator |
 | `reassert_pif_flags` | 1 | Keep Fork's STRONG flags set |
 | `run_pif_action` | 1 | Run PlayIntegrityFork's own fetch on Action/boot |
+| `auto_target` | 1 | Target **every** user app in TEESimulator + HMA (Xposed managers excluded) |
 | `manage_hma` | 1 | Merge the hide template into HMA-OSS's config |
 | `restart_gms_on_sync` | 1 | Bounce DroidGuard + Play Store after a sync |
 | `teesim_mode` | generation | TEESimulator profile mode (`generation` or `patch`) |

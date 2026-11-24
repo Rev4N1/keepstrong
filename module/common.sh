@@ -70,6 +70,7 @@ auto_keybox=1
 auto_fp_sync=1
 reassert_pif_flags=1
 run_pif_action=1
+auto_target=1
 manage_hma=1
 restart_gms_on_sync=1
 spoof_boot_state=0
