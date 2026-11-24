@@ -1,3 +1,14 @@
+# v0.6.5
+
+- WebUI follows PlayIntegrityFork's layout more closely:
+  - The Sync card has **Sync now** on the left and **Check revocation** on the
+    right, like PIFork's Generate / Kill PI Processes.
+  - **View log is gone.** Opening Output shows the log until a button prints
+    something.
+  - All toggles live in one **Configuration** section, with the prop spoofing
+    ones under an **Advanced** heading inside it.
+  - "HMA-OSS — extra apps to hide" is now just **Extra apps to hide**.
+
 # v0.6.4
 
 - **WebUI laid out like PlayIntegrityFork's:**

@@ -71,6 +71,8 @@
   #outCard.term-fs{position:fixed;inset:0;z-index:90;margin:0;border-radius:0;border:none;padding:max(env(safe-area-inset-top),14px) 16px max(env(safe-area-inset-bottom),16px)}
   #outCard.term-fs #term{position:fixed;top:calc(max(env(safe-area-inset-top),14px) + 42px);left:16px;right:16px;bottom:max(env(safe-area-inset-bottom),16px);margin:0;max-height:none;overflow:auto;overscroll-behavior:contain;z-index:91}
   #outCard.term-fs .chev{display:none}
+  h3.sub{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:400;
+    margin:18px 0 6px;padding-top:14px;border-top:1px solid var(--line)}
   .note{font-size:.76rem;color:var(--muted);margin:10px 2px 0;line-height:1.4}
 </style>
 </head>
@@ -94,13 +96,12 @@
     <div class="row"><div class="lbl"><b>Keybox</b><small>/data/adb/teesim/keybox.xml</small></div><span class="pill" id="pKb">—</span></div>
     <div class="row"><div class="lbl"><b>Revocation</b><small id="kbSerial">Google attestation status</small></div><span class="pill" id="pRev">—</span></div>
     <div class="row"><div class="lbl"><b>Last sync</b></div><span class="pill" id="pSync">—</span></div>
-    <div class="btns"><button id="checkKb">Check revocation now</button></div>
   </div>
 
   <div class="card">
     <h2>Sync</h2>
     <div class="note" style="margin-top:0">Runs the full pipeline: PIF fetch, keybox, flags, patch, TEESimulator, HMA-OSS. Same as the Action button.</div>
-    <div class="btns"><button class="primary" id="syncBtn">Sync now</button><button id="logBtn">View log</button></div>
+    <div class="btns"><button id="syncBtn">Sync now</button><button id="checkKb">Check revocation</button></div>
   </div>
 
   <div class="card">
@@ -114,8 +115,8 @@
   </div>
 
   <div class="card">
-    <details id="secToggles">
-    <summary>Toggles<span class="chev">▾</span></summary>
+    <details id="secConfig">
+    <summary>Configuration<span class="chev">▾</span></summary>
     <div class="row"><div class="lbl"><b>Enabled</b><small>Master switch for the orchestrator</small></div><label class="sw"><input type="checkbox" data-k="enabled"><i></i></label></div>
     <div class="row"><div class="lbl"><b>Auto keybox</b><small>Pull a keybox from your endpoints</small></div><label class="sw"><input type="checkbox" data-k="auto_keybox"><i></i></label></div>
     <div class="row"><div class="lbl"><b>Fingerprint sync</b><small>Mirror PIF identity + patch into TEESimulator</small></div><label class="sw"><input type="checkbox" data-k="auto_fp_sync"><i></i></label></div>
@@ -129,13 +130,8 @@
     <label class="field"><span>Refresh interval (seconds)</span>
       <input class="inp" id="interval" inputmode="numeric" placeholder="3600"></label>
     <div class="btns"><button id="saveInterval">Save interval</button></div>
-    </details>
-  </div>
-
-  <div class="card">
-    <details id="secAdv">
-    <summary>Advanced — prop spoofing<span class="chev">▾</span></summary>
-    <div class="note">On by default. PlayIntegrityFork also spoofs these, so if you see conflicts (props fighting, odd boot state) turn them off and let PIF own them.</div>
+    <h3 class="sub">Advanced</h3>
+    <div class="note" style="margin-top:0">Prop spoofing, on by default. PlayIntegrityFork also spoofs these, so if you see conflicts (props fighting, odd boot state) turn them off and let PIF own them.</div>
     <div class="row"><div class="lbl"><b>Spoof boot state</b><small>Locked / Verified boot props</small></div><label class="sw"><input type="checkbox" data-k="spoof_boot_state"><i></i></label></div>
     <div class="row"><div class="lbl"><b>Spoof patch props</b><small>Pin OS patch props to the attested one</small></div><label class="sw"><input type="checkbox" data-k="spoof_patch_props"><i></i></label></div>
     </details>
@@ -152,7 +148,7 @@
 
   <div class="card">
     <details id="secHide">
-    <summary>HMA-OSS — extra apps to hide<span class="chev">▾</span></summary>
+    <summary>Extra apps to hide<span class="chev">▾</span></summary>
     <div class="note">Added to the built-in hide-list (root managers, Xposed, HMA). These packages get hidden from the target apps. Needs HMA opened once so it has a config.</div>
     <textarea class="inp" id="hide" placeholder="com.some.rootapp" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
     <div class="btns"><button id="saveHide">Save hide-list</button></div>
@@ -198,6 +194,7 @@ function termWrite(text){
 // Every button goes through run(): it opens the Run section so output is
 // visible, and shows any bridge/command error instead of failing silently.
 async function run(fn){
+  termFresh=false;           // a button's output wins over the auto-shown log
   $("#secOut").open=true;
   try{await fn();}catch(e){termWrite("ERROR: "+(e&&e.message||e));}
   $("#term").scrollIntoView({block:"nearest",behavior:"smooth"});
@@ -280,10 +277,14 @@ $("#syncBtn").onclick=()=>run(async()=>{
   finally{$("#syncBtn").disabled=false;}
   refresh();
 });
-$("#logBtn").onclick=()=>run(async()=>{
-  termWrite("Reading log...");
-  const r=await exec(`${SH} log`);
-  termWrite(r.stdout.replace(/\s+$/,"")||r.stderr||"(log empty)");
+// No View log button: opening Output while it has nothing new shows the log.
+let termFresh=true;
+$("#secOut").addEventListener("toggle",async()=>{
+  if(!$("#secOut").open||!termFresh)return;
+  try{
+    const r=await exec(`${SH} log`);
+    if(termFresh)termWrite(r.stdout.replace(/\s+$/,"")||r.stderr||"(log empty)");
+  }catch(e){if(termFresh)termWrite("ERROR: "+(e&&e.message||e));}
 });
 function applyTheme(t){
   t=t==="light"?"light":"dark";
