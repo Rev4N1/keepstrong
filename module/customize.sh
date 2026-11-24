@@ -50,6 +50,15 @@ ui_print ""
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 for f in common.sh detect.sh sync.sh action.sh service.sh post-fs-data.sh \
          keybox_fetch.sh pif_sync.sh sync_patch.sh build_target.sh teesim_config.sh \
-         hma_sync.sh webui.sh; do
+         hma_sync.sh hma_merge.awk hotinstall.sh hotinstall-launcher.sh \
+         hotinstall_apply.sh webui.sh; do
   [ -f "$MODPATH/$f" ] && set_perm "$MODPATH/$f" 0 0 0755
 done
+
+# Hot install: if this is an update (previous version already live) and the
+# payload is userspace-only (it always is), swap it in and apply live — no
+# reboot. No-op on a first install. Per-manager logic lives in the sourced file.
+if [ -f "$MODPATH/hotinstall_apply.sh" ]; then
+  . "$MODPATH/hotinstall_apply.sh"
+  ks_hot_install
+fi

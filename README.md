@@ -102,6 +102,15 @@ KeepStrong is glue, not another spoofer. By default it:
 
 The whole module is ~22 KB of shell + one HTML page.
 
+## Hot install (no reboot on update)
+
+KeepStrong is purely userspace (shell + WebUI, no partition/zygisk/sepolicy
+payload), so flashing a **new version over an existing one** applies live: the
+installer swaps the update into place and re-runs the pipeline immediately — no
+reboot. It delegates to native hot install (ksud / mountify) when available,
+otherwise does a safe swap-with-rollback. A first install still needs the normal
+reboot. If the live-apply fails it says so and falls back to Action / reboot.
+
 ## Notes & caveats
 
 - **Untested on-device at release.** The scripts are self-checked and the config

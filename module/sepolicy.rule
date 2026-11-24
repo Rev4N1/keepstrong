@@ -1,3 +1,0 @@
-# KeepStrong has no custom sepolicy needs of its own; it only writes files that
-# the TEESimulator and PlayIntegrityFork modules already own the policy for.
-# Left intentionally minimal.

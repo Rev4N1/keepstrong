@@ -64,3 +64,12 @@ ks_hma_config() {
   unset _hd; return 1
 }
 ks_hma_present() { ks_hma_dir >/dev/null 2>&1; }
+
+# Root solution — for hot install's per-manager swap. The installers export
+# their markers (KSU_VER / APATCH) into customize.sh's shell; the /data/adb/*
+# dirs are the fallback.
+ks_root_sol() {
+  if [ -n "${KSU_VER:-}${KSU_VER_CODE:-}" ] || [ -d /data/adb/ksu ]; then echo kernelsu
+  elif [ -n "${APATCH:-}${APATCH_VER:-}" ] || [ -d /data/adb/ap ]; then echo apatch
+  else echo magisk; fi
+}

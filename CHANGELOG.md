@@ -1,3 +1,12 @@
+# v0.3.0
+
+- **Hot install — no reboot on update.** Flashing a new version over an existing
+  one now applies live: the installer swaps the update into the live dir and
+  re-runs the full pipeline immediately. Delegates to native hot install (ksud /
+  mountify) when present, else a safe swap-with-rollback. First install still
+  reboots as normal. (Adapted from Specter.) Dropped the empty sepolicy.rule so
+  the module is unambiguously userspace-only and hot-installable.
+
 # v0.2.1
 
 - **Auto-target every user app.** Like AlwaysStrong/Specter, both TEESimulator
