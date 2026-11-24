@@ -44,6 +44,8 @@ if ks_on run_pif_action && [ "$_kind" != "none" ] && { [ "$MODE" = "action" ] ||
   elif [ -f "$_dir/autopif4.sh" ]; then
     ks_say "[1/6] PlayIntegrityFork: running autopif4.sh (fresh fingerprint)..."
     sh "$_dir/autopif4.sh" -m >/dev/null 2>&1 || true
+  else
+    ks_say "[1/6] PlayIntegrityFork: no action.sh / autopif4.sh found, skipped"
   fi
 else
   ks_say "[1/6] PlayIntegrityFork fetch: skipped ($MODE)"
