@@ -27,13 +27,12 @@ export KS_VERBOSE
 ks_on enabled || { ks_say "KeepStrong is disabled — nothing to do."; exit 0; }
 ks_say "KeepStrong sync — $MODE"
 
-# Presence summary (for the WebUI/status and the logs).
+# Presence state for the WebUI status (action.sh already prints it).
 _dir=$(ks_pif_dir) && _kind=$(ks_pif_kind "$_dir") || _kind=none
 [ "$_kind" = "installed" ] || { _kind=none; _dir=""; }
 st_set pif_kind "$_kind"
 ks_teesim_present && st_set teesim present || st_set teesim absent
 ks_hma_present && st_set hma present || st_set hma absent
-ks_say "  stack: PlayIntegrityFork=$_kind  teesim=$(ks_teesim_present && echo yes || echo NO)  hma=$(ks_hma_present && echo yes || echo no)"
 
 # 0. Trigger PlayIntegrityFork's own fetch so Build carries a fresh fingerprint
 #    before we mirror it into TEESimulator. action/boot only (not hourly).

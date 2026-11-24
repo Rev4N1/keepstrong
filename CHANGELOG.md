@@ -1,3 +1,8 @@
+# v0.6.2
+
+- The Action log no longer prints the `stack:` line; the status lines at the
+  top (PlayIntegrityFork / TEESimulator / HMA-OSS: installed) already say it.
+
 # v0.6.1
 
 - **Only the STRONG flags are touched.** KeepStrong now sets just `spoofBuild=1`,
