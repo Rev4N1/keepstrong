@@ -36,7 +36,8 @@ ks_on enabled || exit 0
 # Hourly (configurable) refresh loop.
 {
   while true; do
-    sleep "$(ks_int interval_sec 3600)"
+    _iv=$(ks_int interval_sec 3600); [ "$_iv" -lt 300 ] && _iv=300   # never loop faster than 5 min
+    sleep "$_iv"
     ks_on enabled || continue
     sh "$MODDIR/sync.sh" hourly 2>&1 | log -t KeepStrong-hourly 2>/dev/null
   done

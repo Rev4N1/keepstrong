@@ -68,11 +68,18 @@ ks_teesim_present() { [ -f "$MODULES_BASE/teesim/module.prop" ] || [ -f "${MODUL
 # at /data/misc/hide_my_applist_<random>/config.json, created on first boot /
 # first launch of the HMA app.
 : "${HMAOSS_BASE:=/data/misc}"
+# A reinstall of HMA can leave an older hide_my_applist_* dir behind, so prefer
+# the one whose config.json was written most recently.
 ks_hma_dir() {
+  _best=""
   for _d in "$HMAOSS_BASE"/hide_my_applist*; do
-    [ -d "$_d" ] && { printf '%s' "$_d"; unset _d; return 0; }
+    [ -d "$_d" ] || continue
+    if [ -z "$_best" ]; then _best="$_d"
+    elif [ -f "$_d/config.json" ] && { [ ! -f "$_best/config.json" ] || [ "$_d/config.json" -nt "$_best/config.json" ]; }; then _best="$_d"
+    fi
   done
-  unset _d; return 1
+  [ -n "$_best" ] && printf '%s' "$_best"
+  [ -n "$_best" ]; _rc=$?; unset _d _best; return $_rc
 }
 ks_hma_config() {
   _hd=$(ks_hma_dir) || { unset _hd; return 1; }

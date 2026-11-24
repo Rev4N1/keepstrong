@@ -20,11 +20,11 @@ On the Action button (and boot), it runs the full pipeline; hourly it runs the
 same minus the PIF fetch:
 
 0. **PIF action** — triggers PlayIntegrityFork's own `action.sh` / `autopif4.sh` so Build carries a fresh Pixel fingerprint before anything is mirrored (Action/boot only, to avoid hourly churn).
-1. **Keybox** — fetches a keybox from **your** endpoints (a list, tried in order), validates it, installs it at `/data/adb/teesim/keybox.xml`. Ships no server; raw or base64-encoded XML both accepted.
+1. **Keybox** — fetches a keybox from **your** endpoints (a list, tried in order), validates it, installs it at `/data/adb/teesim/keybox.xml`. A fresh install is seeded with the public AlwaysStrong / Specter mirrors; put your own endpoint first. Raw or base64-encoded XML both accepted. The keybox is then checked against Google's revocation list.
 2. **PIF flags** — re-asserts only the flags STRONG depends on: `spoofBuild=1`, `spoofProps=1`, and `spoofVendingFinger=1` on SDK 33+ (0 on SDK 32 and older). Every other PIFork flag is left exactly as PIFork wrote it. Its autopif can reset these, so they are re-applied after every fetch.
 3. **Security patch** — reads the patch PIFork spoofs (`ro.build.version.security_patch`, falling back to `SECURITY_PATCH`, in `custom.pif.prop`) and sets TEESimulator's patch level to it on all three partitions. No device-patch fallback, so attestation never claims a patch Build doesn't.
 4. **TEESimulator config** — mirrors the PIF-spoofed Pixel identity (brand/model/device/product/manufacturer + OS version + patch) into `/data/adb/teesim/config.json`, targets **every installed user app** (`pm list packages -3`, Xposed managers excluded) plus the Play Integrity core, sets the mode, and writes `/data/adb/teesim/overrides.json` to force a locked/Verified root of trust with a stable non-zero key+hash (so an unlocked bootloader doesn't attest a zeroed ORANGE root).
-5. **HMA-OSS** (optional) — merges a managed blacklist template into your **existing** HMA-OSS config so **every user app** is blinded to your root manager / modules / Xposed, preserving your own templates, scope and `configVersion`. Skips cleanly if it can't parse the config.
+5. **HMA-OSS** (optional) — merges a managed blacklist template into your **existing** HMA-OSS config so **every user app** is blinded to your root manager / modules / Xposed, preserving your own templates, scope and `configVersion`. The hidden apps themselves (root managers, HMA) are kept out of the scope. Skips cleanly if it can't parse the config.
 6. **Restart** — runs PlayIntegrityFork's own `killpi.sh` so DroidGuard + Play Store restart with the new identity, no reboot.
 
 It never launches TEESimulator's daemon (its own module does that), never
@@ -36,27 +36,29 @@ except HMA-OSS's config (which it merges into, never overwrites). It disables
 
 - Magisk (Zygisk) / KernelSU / APatch, with a Zygisk implementation for PlayIntegrityFork.
 - PlayIntegrityFork **and** JingMatrix TEESimulator installed (TEESimulator is arm64/x86_64 only).
-- Your own attestation keybox, reachable at an HTTP(S) endpoint you control.
+- A non-revoked attestation keybox: your own endpoint, or the seeded public mirrors.
 - Android 10+.
 
 ## Install
 
 1. Install PlayIntegrityFork and TEESimulator (and HMA-OSS if you want it). Reboot.
 2. Flash `keepstrong.zip` in your root manager. Reboot.
-3. Open **KeepStrong** in your root manager's WebUI (KernelSU / APatch).
-4. Set **Keybox URL**, tap **Fetch keybox now**, then **Sync now**.
-5. Verify with Play Integrity API Checker / YASNAC.
+3. Tap KeepStrong's **Action**, or open its WebUI (KernelSU / APatch) and tap **Sync now**.
+   Add your own keybox endpoint under **Keybox endpoints** first if you have one.
+4. Verify with Play Integrity API Checker / YASNAC.
 
-No WebUI (plain Magisk)? Edit `/data/adb/keepstrong/config` (set `keybox_url=`),
-then run `su -c 'sh /data/adb/modules/keepstrong/action.sh'`.
+No WebUI (plain Magisk)? Edit `/data/adb/keepstrong/keybox.urls` (one URL per
+line) and tap the module's Action button.
 
 ## Configuration
 
 Everything lives in `/data/adb/keepstrong/`:
 
 - `config` — one `key=value` per line (see below). Delete it to reset to defaults.
+- `keybox.urls` — keybox endpoints, one per line, tried in order.
 - `apps.list` — extra packages to attest, one per line (GMS/Vending/GSF are always covered).
-- `logs/keepstrong.log` — what each pass did.
+- `hma_hide.list` — extra packages HMA-OSS should hide.
+- `logs/keepstrong.log` — what each pass did (kept under ~256 KB). Shown in the WebUI's Output section.
 - `security_patch.txt`, `state` — derived data; safe to ignore.
 
 | Key | Default | Meaning |
@@ -83,9 +85,10 @@ from the WebUI.
 
 KeepStrong is glue, not another spoofer. By default it:
 
-- **Sets only the boot/patch props.** The two `spoof_*` toggles are on by
-  default so the OS-reported state matches what PIFork attests; turn one off if
-  PIF already owns it globally on your device and the two fight.
+- **Sets only the boot/patch props.** The two `spoof_*` toggles (WebUI →
+  Configuration → Advanced) are on by default so the OS-reported state matches
+  what is attested; turn one off if PIF already owns it on your device and the
+  two fight.
 - **Disables no module; edits only data, never module files.** It writes
   `/data/adb/teesim/{config.json,overrides.json,keybox.xml}` (TEESimulator's own
   data dir, the whole point), re-asserts Fork's STRONG flag set (see step 2)
@@ -101,7 +104,7 @@ KeepStrong is glue, not another spoofer. By default it:
 - **Keeps all its own files** under `/data/adb/keepstrong/`; uninstall removes
   only that and leaves your keybox/TEESimulator config in place.
 
-The whole module is ~22 KB of shell + one HTML page.
+The whole module is a ~37 KB zip of shell, one awk file and one HTML page.
 
 ## Hot install (no reboot on update)
 
@@ -114,9 +117,13 @@ reboot. If the live-apply fails it says so and falls back to Action / reboot.
 
 ## Notes & caveats
 
-- **Untested on-device at release.** The scripts are self-checked and the config
-  generation is validated, but STRONG depends on your device, keybox and the
-  exact TEESimulator version. Treat v0.1.0 as a first cut and check the log.
+- STRONG depends on your device, keybox and the exact TEESimulator version. If
+  it drops, open the WebUI's Output section to read the log.
+- TEESimulator mode (WebUI → Configuration): **generation** (default) mints the
+  key under your keybox and works everywhere; **patch** lets the real TEE make
+  the key and re-signs it. Apps that attest device IDs with their own
+  attestation key (e.g. Key Attestation) fail ID attestation in both modes,
+  which does not affect Play Integrity.
 - The `mode: generation` + `overrides.json` recipe follows AlwaysStrong's proven
   `-TEESIM` bridge. If a future TEESimulator build changes its config schema,
   adjust `teesim_config.sh`.

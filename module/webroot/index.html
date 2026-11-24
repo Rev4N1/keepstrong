@@ -115,7 +115,6 @@
     <div class="note">One URL per line, <b>tried in order</b> — put yours first, add mirrors below as fallbacks for when it drops. Raw or base64 XML both accepted. KeepStrong ships no server.</div>
     <textarea class="inp" id="kbUrls" placeholder="https://your-endpoint/key" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
     <div class="btns"><button id="addMirrors">+ Public mirrors</button><button id="saveUrls">Save</button></div>
-    <div class="btns"><button class="primary" id="fetchKb">Fetch keybox now</button></div>
     </details>
   </div>
 
@@ -258,11 +257,6 @@ $("#checkKb").onclick=()=>run(async()=>{
   const out=(r.stdout||"").trim();
   termWrite(out==="OK"?"Keybox OK — not on the revocation list.":(/^REVOKED/.test(out)?"KEYBOX REVOKED: "+out.replace("REVOKED:","")+" — fetch a fresh keybox.":"Could not check: "+out.replace("UNKNOWN:","")));
   refresh();
-});
-$("#fetchKb").onclick=()=>run(async()=>{
-  termWrite("Fetching keybox...");
-  const r=await exec(`sh ${MOD}/keybox_fetch.sh 2>&1; echo "rc=$?"`);
-  termWrite(r.stdout||r.stderr||"(no output)");refresh();
 });
 $("#saveInterval").onclick=async()=>{
   const v=($("#interval").value||"3600").replace(/[^0-9]/g,"")||"3600";

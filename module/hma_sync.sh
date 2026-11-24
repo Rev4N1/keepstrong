@@ -57,7 +57,10 @@ fi
 
 # Targets: the apps to blind (packages only — HMA scope keys are package names,
 # so drop the uid: entries build_target adds for TEESimulator).
-sh "$MODDIR/build_target.sh" 2>/dev/null | grep -vE '^uid:' | grep -E '\.' > "$TMP/tgt"
+# The hidden apps themselves (root managers, HMA) are left out of the scope so
+# they are never blinded to each other.
+grep -vE '^(#|$)' "$TMP/hide" > "$TMP/hidepk"
+sh "$MODDIR/build_target.sh" 2>/dev/null | grep -vE '^uid:' | grep -E '\.' | grep -vxF -f "$TMP/hidepk" > "$TMP/tgt"
 [ -s "$TMP/tgt" ] || { ks_log "hma_sync: no targets, skipping"; exit 0; }
 
 # Merge (brace-aware; prints nothing + rc 2 on any parse problem).

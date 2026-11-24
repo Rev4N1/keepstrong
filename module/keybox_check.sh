@@ -55,7 +55,7 @@ if [ -s "$CACHE" ] && grep -q '"entries"' "$CACHE" 2>/dev/null; then
   [ "$_age" -ge 0 ] && [ "$_age" -lt "$CACHE_TTL" ] && _fresh=1
 fi
 if [ "$_fresh" = 0 ]; then
-  if ks_check_network && ks_fetch "$CACHE.tmp" "$GOOGLE_URL" && grep -q '"entries"' "$CACHE.tmp" 2>/dev/null; then
+  if ks_fetch "$CACHE.tmp" "$GOOGLE_URL" && grep -q '"entries"' "$CACHE.tmp" 2>/dev/null; then
     mv -f "$CACHE.tmp" "$CACHE" 2>/dev/null
   else
     rm -f "$CACHE.tmp" 2>/dev/null

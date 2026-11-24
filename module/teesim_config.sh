@@ -31,7 +31,9 @@ mkdir -p "$TEESIM_DIR" 2>/dev/null
 
 # --- device identity from the active PIF fingerprint -----------------------
 _pif=$(ks_pif_src) || _pif=""
-_pget() { [ -n "$_pif" ] && sed -n "s/^$1=//p" "$_pif" | head -1 | tr -d '\r"'; }
+# Quotes, backslashes and control characters are dropped so a value can never
+# break the JSON written below.
+_pget() { [ -n "$_pif" ] && sed -n "s/^$1=//p" "$_pif" | head -1 | sed 's/["\\]//g; s/[[:cntrl:]]//g'; }
 _fp=$(_pget FINGERPRINT)
 _brand=$(_pget BRAND);   [ -z "$_brand" ] && [ -n "$_fp" ] && _brand=$(printf '%s' "$_fp" | cut -d/ -f1)
 _manu=$(_pget MANUFACTURER)

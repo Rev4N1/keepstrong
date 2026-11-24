@@ -59,8 +59,6 @@ _decode_valid() {
   return 1
 }
 
-if ! ks_check_network; then ks_log "keybox_fetch: no network"; exit 1; fi
-
 printf '%s\n' "$URLS" | while IFS= read -r URL; do
   [ -n "$URL" ] || continue
   if ! ks_fetch "$TMP/raw" "$URL"; then

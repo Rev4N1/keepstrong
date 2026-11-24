@@ -1,3 +1,17 @@
+# v0.6.7
+
+- **Fetch keybox now removed** from the WebUI; Sync fetches the keybox.
+- **Keybox fetch and revocation check no longer depend on ping.** Networks that
+  block ping (some Wi-Fi and carriers) made them give up with "no network"
+  even though downloads worked.
+- **HMA-OSS:** picks the newest `hide_my_applist_*` folder if a reinstall left
+  an old one behind, and keeps the hidden apps themselves (root managers, HMA)
+  out of the scope.
+- Fingerprint values are cleaned before going into TEESimulator's config, so a
+  stray quote or backslash can't break it.
+- The refresh interval can't go below 5 minutes (0 used to loop nonstop).
+- README and comments brought up to date.
+
 # v0.6.6
 
 - **TEESimulator mode is a two-way toggle** (Generation / Patch) like
