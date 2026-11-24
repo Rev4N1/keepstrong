@@ -22,6 +22,12 @@
 
 ks_init() {
   mkdir -p "$KS_DIR" "$KS_LOGS" 2>/dev/null
+  # Keep the log bounded (the hourly loop appends forever): past ~256 KB keep
+  # the newest 1000 lines.
+  _lf="$KS_LOGS/keepstrong.log"
+  if [ -f "$_lf" ] && [ "$(wc -c < "$_lf" 2>/dev/null | tr -d " ")" -gt 262144 ] 2>/dev/null; then
+    tail -n 1000 "$_lf" > "$_lf.tmp" 2>/dev/null && mv -f "$_lf.tmp" "$_lf" 2>/dev/null
+  fi
   if [ -f "$KS_CONFIG" ]; then ks_merge_defaults; else ks_write_defaults; fi
   [ -f "$KS_STATE" ] || : > "$KS_STATE"
   # Public keybox mirrors, seeded once. If you edit or clear the list in the

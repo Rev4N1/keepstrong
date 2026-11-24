@@ -83,7 +83,14 @@ case "$cmd" in
     echo ok ;;
   check-kb) sh "$MODDIR/keybox_check.sh" ;;
   sync) sh "$MODDIR/sync.sh" action 2>&1; echo "---"; echo "sync complete" ;;
-  log) tail -n 200 "$KS_LOGS/keepstrong.log" 2>/dev/null ;;
+  log)
+    _lf="$KS_LOGS/keepstrong.log"
+    if [ -s "$_lf" ]; then
+      # Last 200 lines, control characters stripped so the WebUI bridge never chokes.
+      tail -n 200 "$_lf" 2>/dev/null | sed "s/[[:cntrl:]]//g"
+    else
+      echo "(no log yet at $_lf: run Sync or the Action once)"
+    fi ;;
   version) grep '^version=' "$MODDIR/module.prop" 2>/dev/null | cut -d= -f2 ;;
   *) echo "unknown command: $cmd" >&2; exit 1 ;;
 esac

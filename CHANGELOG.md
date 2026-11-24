@@ -1,3 +1,15 @@
+# v0.6.3
+
+- **WebUI sections collapse**, like PlayIntegrityFork's: tap a section title to
+  open or close it. Stack, Keybox endpoints and Run start open; the rest start
+  closed, and your choice is remembered.
+- **View log fixed.** The log is cleaned of control characters before it is
+  sent to the page, says where it is when there is none yet, and any error now
+  shows in the output box instead of the button silently doing nothing. Every
+  Run button opens the Run section so you see the output.
+- The log is now kept under ~256 KB (newest 1000 lines), so the hourly loop
+  can't grow it forever.
+
 # v0.6.2
 
 - The Action log no longer prints the `stack:` line; the status lines at the
