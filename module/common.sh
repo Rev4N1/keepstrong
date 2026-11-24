@@ -61,13 +61,17 @@ ks_write_defaults() {
   mkdir -p "$KS_DIR" 2>/dev/null
   cat > "$KS_CONFIG" <<'EOF'
 # KeepStrong settings — one key=value per line. Delete this file to reset.
+#
+# Lean by default: KeepStrong sets ZERO system props out of the box. The two
+# prop-spoof toggles are OFF because PlayIntegrityFork already does that job;
+# only turn one on if PIF somehow isn't covering it on your device.
 enabled=1
 auto_keybox=1
 auto_fp_sync=1
-spoof_boot_state=1
-spoof_patch_props=1
 reassert_pif_flags=1
 restart_gms_on_sync=1
+spoof_boot_state=0
+spoof_patch_props=0
 interval_sec=3600
 keybox_url=
 EOF
@@ -134,8 +138,10 @@ ks_fetch() {
 }
 
 # -- Restart Play Integrity / DroidGuard so a new identity takes effect -----
+# Deliberately gentle: kill only DroidGuard (the Play Integrity worker) and
+# force-stop the Play Store. We do NOT `pm clear` Vending — that wipes your
+# Play Store login/settings, which is not our call to make on every sync.
 ks_restart_gms() {
   killall -9 com.google.android.gms.unstable 2>/dev/null
-  am force-stop com.google.android.gms 2>/dev/null
-  pm clear com.android.vending >/dev/null 2>&1
+  am force-stop com.android.vending 2>/dev/null
 }

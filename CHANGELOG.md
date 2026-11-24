@@ -1,3 +1,17 @@
+# v0.1.2
+
+Leaner, less intrusive — stops stepping on your other modules.
+
+- **Zero system props by default.** `spoof_boot_state` and `spoof_patch_props`
+  are now OFF — PlayIntegrityFork already spoofs the locked/verified-boot and
+  patch props, so KeepStrong no longer duplicates (and fights) that. Enable
+  either only if PIF isn't covering it on your device.
+- Trimmed the optional boot-prop set to a minimal core; dropped the broad
+  build.tags/build.type sweeps across every partition (PIF's job).
+- Gentler GMS restart: kills DroidGuard + force-stops the Play Store, no more
+  `pm clear` wiping your Play Store login on every sync.
+- Added a "Footprint" section to the README spelling out exactly what it touches.
+
 # v0.1.1
 
 - Keybox endpoints are now a **list**, tried in order with fallback — put yours

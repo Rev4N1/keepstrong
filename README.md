@@ -58,14 +58,35 @@ Everything lives in `/data/adb/keepstrong/`:
 | Key | Default | Meaning |
 |---|---|---|
 | `enabled` | 1 | Master switch |
-| `auto_keybox` | 1 | Fetch keybox hourly from `keybox_url` |
+| `auto_keybox` | 1 | Fetch keybox from your endpoints |
 | `auto_fp_sync` | 1 | Mirror PIF identity into TEESimulator |
 | `reassert_pif_flags` | 1 | Keep Fork's STRONG flags set |
-| `spoof_boot_state` | 1 | Locked/Verified boot props |
-| `spoof_patch_props` | 1 | Match OS patch to the attested one |
 | `restart_gms_on_sync` | 1 | Bounce DroidGuard + Play Store after a sync |
+| `spoof_boot_state` | **0** | Locked/Verified boot props — **off: PIF already does this** |
+| `spoof_patch_props` | **0** | Pin OS patch props — **off: PIF already does this** |
 | `interval_sec` | 3600 | Refresh interval |
-| `keybox_url` | *(empty)* | **Your** keybox endpoint — required |
+| `keybox_url` | *(empty)* | Legacy single endpoint (use the WebUI list / `keybox.urls` instead) |
+
+## Footprint — what it touches
+
+KeepStrong is glue, not another spoofer. By default it:
+
+- **Sets zero system props.** The locked-bootloader / verified-boot / patch
+  props are PlayIntegrityFork's job — the two `spoof_*` toggles that would set
+  them are **off by default**. Turn one on only if PIF isn't covering it.
+- **Disables / modifies no other module.** It never edits PIF's or
+  TEESimulator's module files; it only writes `/data/adb/teesim/config.json`,
+  `overrides.json` and `keybox.xml` (TEESimulator's own data dir, which is the
+  whole point) and re-asserts the one Fork flag (`spoofVendingFinger`) that
+  PIF's autopif keeps resetting.
+- **Runs one lightweight background loop** (a sleeping shell that re-syncs on
+  `interval_sec`). No native daemons, no watchers, no bundled binaries.
+- **Restarts gently:** kills DroidGuard and force-stops the Play Store. It does
+  **not** `pm clear` the Play Store (that would wipe your login every sync).
+- **Keeps all its own files** under `/data/adb/keepstrong/`; uninstall removes
+  only that and leaves your keybox/TEESimulator config in place.
+
+The whole module is ~22 KB of shell + one HTML page.
 
 ## Notes & caveats
 
