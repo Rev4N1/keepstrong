@@ -1,3 +1,9 @@
+# v0.6.6
+
+- **TEESimulator mode is a two-way toggle** (Generation / Patch) like
+  PlayIntegrityFork's AutoPIF mode, with a line under it explaining the
+  selected mode. It replaces the dropdown.
+
 # v0.6.5
 
 - WebUI follows PlayIntegrityFork's layout more closely:
