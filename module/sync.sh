@@ -57,6 +57,15 @@ if ks_on auto_keybox; then
 else
   ks_say "[2/6] Keybox: auto_keybox off, skipped"
 fi
+# Revocation check — a revoked keybox never reaches STRONG, so flag it loudly.
+if [ -s "$TEESIM_KEYBOX" ]; then
+  _rev=$(sh "$MODDIR/keybox_check.sh")
+  case "$_rev" in
+    OK) ks_say "      keybox revocation: OK (not revoked)";;
+    REVOKED:*) ks_say "      !! KEYBOX REVOKED (${_rev#REVOKED:}) — get a fresh keybox, this will NOT pass STRONG";;
+    *) ks_say "      keybox revocation: ${_rev#UNKNOWN:} (could not check)";;
+  esac
+fi
 
 # 2. PIF flags
 if ks_on auto_fp_sync; then

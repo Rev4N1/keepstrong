@@ -38,6 +38,8 @@ case "$cmd" in
     printf '"hma":%s,' "$(_bool "$_hma")"
     printf '"hma_config":%s,' "$_hmacfg"
     printf '"keybox":%s,' "$_kb"
+    printf '"keybox_revoked":"%s",' "$(_jesc "$(st_get keybox_revoked)")"
+    printf '"keybox_serial":"%s",' "$(_jesc "$(st_get keybox_serial)")"
     printf '"last_sync":"%s",' "$(_jesc "$(st_get last_sync)")"
     printf '"enabled":%s,' "$(_bool "$(ks_get enabled 0)")"
     printf '"auto_keybox":%s,' "$(_bool "$(ks_get auto_keybox 0)")"
@@ -78,6 +80,7 @@ case "$cmd" in
     printf '%s' "$1" | base64 -d > "$KS_DIR/hma_hide.list" 2>/dev/null || {
       _bb=$(ks_busybox); [ -n "$_bb" ] && printf '%s' "$1" | "$_bb" base64 -d > "$KS_DIR/hma_hide.list" 2>/dev/null; }
     echo ok ;;
+  check-kb) sh "$MODDIR/keybox_check.sh" ;;
   sync) sh "$MODDIR/sync.sh" action 2>&1; echo "---"; echo "sync complete" ;;
   log) tail -n 200 "$KS_LOGS/keepstrong.log" 2>/dev/null ;;
   version) grep '^version=' "$MODDIR/module.prop" 2>/dev/null | cut -d= -f2 ;;

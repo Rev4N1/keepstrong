@@ -77,7 +77,9 @@
     <div class="row"><div class="lbl"><b>TEESimulator</b><small>JingMatrix key attestation — you install it</small></div><span class="pill" id="pTee">—</span></div>
     <div class="row"><div class="lbl"><b>HMA-OSS</b><small>Module hiding — optional</small></div><span class="pill" id="pHma">—</span></div>
     <div class="row"><div class="lbl"><b>Keybox</b><small>/data/adb/teesim/keybox.xml</small></div><span class="pill" id="pKb">—</span></div>
+    <div class="row"><div class="lbl"><b>Revocation</b><small id="kbSerial">Google attestation status</small></div><span class="pill" id="pRev">—</span></div>
     <div class="row"><div class="lbl"><b>Last sync</b></div><span class="pill" id="pSync">—</span></div>
+    <div class="btns"><button id="checkKb">Check revocation now</button></div>
   </div>
 
   <div class="card">
@@ -171,6 +173,9 @@ async function refresh(){
     pill($("#pTee"), s.teesim?"ok":"err", s.teesim?"installed":"missing");
     pill($("#pHma"), s.hma?(s.hma_config?"ok":"warn"):"warn", s.hma?(s.hma_config?"config found":"open it once"):"—");
     pill($("#pKb"), s.keybox?"ok":"warn", s.keybox?"present":"none");
+    const rev=s.keybox_revoked;
+    pill($("#pRev"), rev==="true"?"err":(rev==="false"?"ok":"warn"), rev==="true"?"REVOKED":(rev==="false"?"not revoked":"unknown"));
+    if(s.keybox_serial) $("#kbSerial").textContent="serial "+s.keybox_serial;
     pill($("#pSync"),"", s.last_sync||"never");
     document.querySelectorAll("input[data-k]").forEach(c=>{c.checked=!!s[c.dataset.k];});
     $("#interval").value=s.interval_sec||"3600";
@@ -203,6 +208,13 @@ $("#addMirrors").onclick=()=>{
   MIRRORS.forEach(m=>{if(!have.includes(m))have.push(m);});
   $("#kbUrls").value=have.join("\n");
   toast("Mirrors added — review order, then Save");
+};
+$("#checkKb").onclick=async()=>{
+  termWrite("Checking keybox against Google's revocation list...");
+  const r=await exec(`${SH} check-kb`);
+  const out=(r.stdout||"").trim();
+  termWrite(out==="OK"?"Keybox OK — not on the revocation list.":(/^REVOKED/.test(out)?"KEYBOX REVOKED: "+out.replace("REVOKED:","")+" — fetch a fresh keybox.":"Could not check: "+out.replace("UNKNOWN:","")));
+  refresh();
 };
 $("#fetchKb").onclick=async()=>{
   termWrite("Fetching keybox...");

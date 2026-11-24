@@ -1,3 +1,12 @@
+# v0.5.0
+
+- **Keybox revocation check.** After fetching, KeepStrong parses the keybox's
+  leaf-certificate serial (ASN.1 in busybox-safe awk, no openssl) and checks it
+  against Google's attestation revocation list. A revoked/expired keybox never
+  reaches STRONG, so Action and the WebUI now flag it loudly instead of leaving
+  you guessing. WebUI shows a Revocation pill + serial and a "Check revocation
+  now" button; the list is cached 6h. (Method from Specter.)
+
 # v0.4.0
 
 - **Everything on by default + public mirrors seeded.** A fresh install enables

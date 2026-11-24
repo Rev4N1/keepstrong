@@ -50,8 +50,8 @@ ui_print ""
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 for f in common.sh detect.sh sync.sh action.sh service.sh post-fs-data.sh \
          keybox_fetch.sh pif_sync.sh sync_patch.sh build_target.sh teesim_config.sh \
-         hma_sync.sh hma_merge.awk hotinstall.sh hotinstall-launcher.sh \
-         hotinstall_apply.sh webui.sh; do
+         hma_sync.sh hma_merge.awk keybox_check.sh hotinstall.sh \
+         hotinstall-launcher.sh hotinstall_apply.sh webui.sh; do
   [ -f "$MODPATH/$f" ] && set_perm "$MODPATH/$f" 0 0 0755
 done
 
