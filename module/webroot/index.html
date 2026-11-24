@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KeepStrong</title>
+<style>
+  :root{
+    --bg:#000; --surface:#111114; --surface2:#1a1a20; --line:#26262e;
+    --text:#eaeaef; --muted:#9a9aa6; --accent:#39d98a; --accent-soft:#7ce9b6;
+    --ok:#39d98a; --warn:#ffcc66; --err:#ff6b6b; --r:16px;
+  }
+  @media (prefers-color-scheme:light){
+    :root:not([data-theme="dark"]){ --bg:#f5f5f8; --surface:#fff; --surface2:#eeeef2; --line:#e3e3ea;
+      --text:#16161a; --muted:#65656f; --accent:#09a862; --accent-soft:#09a862; }
+  }
+  :root[data-theme="light"]{ --bg:#f5f5f8; --surface:#fff; --surface2:#eeeef2; --line:#e3e3ea;
+    --text:#16161a; --muted:#65656f; --accent:#09a862; --accent-soft:#09a862; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--text);
+    padding:max(14px,env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+  header{display:flex;align-items:center;gap:10px;margin:4px 2px 16px}
+  header img{width:30px;height:30px}
+  header h1{font-size:1.15rem;margin:0;font-weight:700}
+  header .sub{font-size:.72rem;color:var(--muted);margin-top:1px}
+  header .spacer{flex:1}
+  .ic{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:6px;border-radius:10px}
+  .ic:active{background:var(--surface2)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .card h2{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0}
+  .row+.row{border-top:1px solid var(--line)}
+  .row .lbl{flex:1}
+  .row .lbl b{font-weight:600;font-size:.95rem}
+  .row .lbl small{display:block;color:var(--muted);font-size:.74rem;margin-top:2px;line-height:1.3}
+  .pill{font-size:.74rem;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+  .pill.err{color:var(--err);border-color:color-mix(in srgb,var(--err) 45%,transparent)}
+  .pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+  .sw{position:relative;width:44px;height:26px;flex:none}
+  .sw input{opacity:0;width:100%;height:100%;margin:0;position:absolute;z-index:2;cursor:pointer}
+  .sw i{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s}
+  .sw i:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+  .sw input:checked + i{background:var(--accent)}
+  .sw input:checked + i:before{transform:translateX(18px)}
+  label.field{display:block;margin:12px 0 0}
+  label.field span{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  input.inp,textarea.inp{width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--text);
+    padding:10px;border-radius:11px;margin-top:6px;font-size:.9rem;font-family:inherit}
+  textarea.inp{min-height:84px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .btns{display:flex;gap:10px;margin-top:14px}
+  .btns button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);
+    color:var(--text);font-weight:600;font-size:.92rem;cursor:pointer}
+  .btns button.primary{background:var(--accent);color:#03130c;border-color:var(--accent)}
+  .btns button:active{opacity:.8}
+  #term{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px;margin-top:12px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.76rem;white-space:pre-wrap;
+    word-break:break-word;max-height:240px;overflow:auto;color:var(--accent-soft)}
+  #term .e{color:var(--err)} #term .g{color:var(--ok)} #term .w{color:var(--warn)} #term .m{color:var(--muted)}
+  .note{font-size:.76rem;color:var(--muted);margin:10px 2px 0;line-height:1.4}
+</style>
+</head>
+<body>
+  <header>
+    <img src="icon.svg" alt="">
+    <div>
+      <h1>KeepStrong</h1>
+      <div class="sub" id="ver">orchestrator</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="ic" id="themeBtn" title="Theme">◑</button>
+  </header>
+
+  <div class="card">
+    <h2>Stack</h2>
+    <div class="row"><div class="lbl"><b>PlayIntegrityFork</b><small>Build / fingerprint spoof — you install it</small></div><span class="pill" id="pPif">—</span></div>
+    <div class="row"><div class="lbl"><b>TEESimulator</b><small>JingMatrix key attestation — you install it</small></div><span class="pill" id="pTee">—</span></div>
+    <div class="row"><div class="lbl"><b>HMA-OSS</b><small>Module hiding — optional</small></div><span class="pill" id="pHma">—</span></div>
+    <div class="row"><div class="lbl"><b>Keybox</b><small>/data/adb/teesim/keybox.xml</small></div><span class="pill" id="pKb">—</span></div>
+    <div class="row"><div class="lbl"><b>Last sync</b></div><span class="pill" id="pSync">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Keybox endpoint</h2>
+    <label class="field"><span>Keybox URL</span>
+      <input class="inp" id="kbUrl" placeholder="https://your-endpoint/key" autocapitalize="off" autocomplete="off" spellcheck="false"></label>
+    <div class="note">Your own endpoint. The payload may be raw keybox XML or base64-encoded XML. KeepStrong ships no server.</div>
+    <div class="btns"><button id="saveUrl">Save URL</button><button id="fetchKb">Fetch keybox now</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Toggles</h2>
+    <div class="row"><div class="lbl"><b>Enabled</b><small>Master switch for the orchestrator</small></div><label class="sw"><input type="checkbox" data-k="enabled"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Auto keybox</b><small>Pull a fresh keybox hourly</small></div><label class="sw"><input type="checkbox" data-k="auto_keybox"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Fingerprint sync</b><small>Mirror PIF identity into TEESimulator</small></div><label class="sw"><input type="checkbox" data-k="auto_fp_sync"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Re-assert PIF flags</b><small>Keep Fork's STRONG spoof flags set</small></div><label class="sw"><input type="checkbox" data-k="reassert_pif_flags"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Spoof boot state</b><small>Locked / Verified boot props</small></div><label class="sw"><input type="checkbox" data-k="spoof_boot_state"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Spoof patch props</b><small>Match OS patch to the attested one</small></div><label class="sw"><input type="checkbox" data-k="spoof_patch_props"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Restart GMS on sync</b><small>Bounce DroidGuard + Play Store</small></div><label class="sw"><input type="checkbox" data-k="restart_gms_on_sync"><i></i></label></div>
+    <label class="field"><span>Refresh interval (seconds)</span>
+      <input class="inp" id="interval" inputmode="numeric" placeholder="3600"></label>
+    <div class="btns"><button id="saveInterval">Save interval</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Extra target apps</h2>
+    <div class="note">One package per line. GMS, Play Store and GSF are always covered — add anything extra you want attested.</div>
+    <textarea class="inp" id="apps" placeholder="com.example.bank&#10;com.example.app" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+    <div class="btns"><button id="saveApps">Save apps</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Run</h2>
+    <div class="btns"><button class="primary" id="syncBtn">Sync now</button><button id="logBtn">View log</button></div>
+    <div id="term"></div>
+  </div>
+
+<script>
+const MOD="/data/adb/modules/keepstrong";
+const SH=`sh ${MOD}/webui.sh`;
+const $=s=>document.querySelector(s);
+
+function exec(cmd,opts){
+  return new Promise((res,rej)=>{
+    if(typeof ksu==="undefined"||!ksu.exec){rej(new Error("Root bridge (ksu.exec) unavailable — open this from KernelSU/APatch"));return;}
+    const cb="cb_"+Math.random().toString(36).slice(2);
+    window[cb]=(errno,stdout,stderr)=>{delete window[cb];res({errno,stdout:stdout||"",stderr:stderr||""});};
+    try{ksu.exec(cmd,JSON.stringify(opts||{}),cb);}catch(err){delete window[cb];rej(err);}
+  });
+}
+function toast(m){try{if(typeof ksu!=="undefined"&&ksu.toast)ksu.toast(m);}catch(e){}}
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+
+function termWrite(text){
+  const t=$("#term");t.textContent="";
+  text.split("\n").forEach(line=>{
+    const d=document.createElement("div");
+    const l=line.toLowerCase();
+    if(/fail|error|not found|missing|!!/.test(l))d.className="e";
+    else if(/done|ok|updated|wrote|strong|present|complete/.test(l))d.className="g";
+    else if(/skip|no |absent|warn/.test(l))d.className="w";
+    d.textContent=line;t.appendChild(d);
+  });
+  t.scrollTop=t.scrollHeight;
+}
+
+function pill(el,state,text){el.textContent=text;el.className="pill "+state;}
+
+async function refresh(){
+  try{
+    const r=await exec(`${SH} status`);
+    const s=JSON.parse(r.stdout.trim()||"{}");
+    pill($("#pPif"), s.pif&&s.pif!=="none"?"ok":"err", s.pif&&s.pif!=="none"?s.pif:"not found");
+    pill($("#pTee"), s.teesim?"ok":"err", s.teesim?"installed":"missing");
+    pill($("#pHma"), s.hma?"ok":"warn", s.hma?"installed":"—");
+    pill($("#pKb"), s.keybox?"ok":"warn", s.keybox?"present":"none");
+    pill($("#pSync"),"", s.last_sync||"never");
+    document.querySelectorAll("input[data-k]").forEach(c=>{c.checked=!!s[c.dataset.k];});
+    $("#kbUrl").value=s.keybox_url||"";
+    $("#interval").value=s.interval_sec||"3600";
+  }catch(e){termWrite("ERROR: "+e.message);}
+  try{const v=await exec(`${SH} version`);if(v.stdout.trim())$("#ver").textContent=v.stdout.trim()+" · orchestrator";}catch(e){}
+  try{const a=await exec(`${SH} apps-get`);$("#apps").value=a.stdout.replace(/\s+$/,"");}catch(e){}
+}
+
+document.querySelectorAll("input[data-k]").forEach(c=>{
+  c.addEventListener("change",async()=>{
+    await exec(`${SH} set ${c.dataset.k} ${c.checked?1:0}`);
+    toast(c.dataset.k+": "+(c.checked?"on":"off"));
+  });
+});
+$("#saveUrl").onclick=async()=>{
+  const u=$("#kbUrl").value.trim();
+  await exec(`${SH} set keybox_url "${u.replace(/"/g,'\\"')}"`);
+  toast("Keybox URL saved");
+};
+$("#fetchKb").onclick=async()=>{
+  termWrite("Fetching keybox...");
+  const r=await exec(`sh ${MOD}/keybox_fetch.sh 2>&1; echo "rc=$?"`);
+  termWrite(r.stdout||r.stderr||"(no output)");refresh();
+};
+$("#saveInterval").onclick=async()=>{
+  const v=($("#interval").value||"3600").replace(/[^0-9]/g,"")||"3600";
+  await exec(`${SH} set interval_sec ${v}`);toast("Interval saved");
+};
+$("#saveApps").onclick=async()=>{
+  await exec(`${SH} apps-set ${b64($("#apps").value)}`);toast("Apps saved");
+};
+$("#syncBtn").onclick=async()=>{
+  $("#syncBtn").disabled=true;termWrite("Running sync...");
+  const r=await exec(`${SH} sync`);
+  termWrite(r.stdout||r.stderr||"(no output)");
+  $("#syncBtn").disabled=false;refresh();
+};
+$("#logBtn").onclick=async()=>{
+  const r=await exec(`${SH} log`);termWrite(r.stdout||"(log empty)");
+};
+$("#themeBtn").onclick=()=>{
+  const cur=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+  document.documentElement.setAttribute("data-theme",cur);
+};
+
+refresh();
+</script>
+</body>
+</html>
