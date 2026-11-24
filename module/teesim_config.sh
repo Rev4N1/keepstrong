@@ -38,11 +38,24 @@ _manu=$(_pget MANUFACTURER)
 _model=$(_pget MODEL)
 _device=$(_pget DEVICE)
 _product=$(_pget PRODUCT)
+# Security patch MUST match the PIF fingerprint (the attested device is the
+# Pixel that PIF spoofs into Build; a mismatched patch drops STRONG). All three
+# partitions get the PIF's SECURITY_PATCH. Only when PIF carries none do we fall
+# back to teesim's own "today"/"YYYY-MM-05" defaults.
 _patch=$(_pget SECURITY_PATCH)
 case "$_patch" in
-  [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) _sys="$_patch" ;;
-  *) _sys="today" ;;
+  [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) _sys="$_patch"; _ven="$_patch"; _boot="$_patch" ;;
+  *) _sys="today"; _ven="YYYY-MM-05"; _boot="YYYY-MM-05" ;;
 esac
+# OS version: match the Android release PIF spoofs (fingerprint ".../:<ver>/...").
+# Empty = reuse teesim's harvested value.
+_osver=$(printf '%s' "$_fp" | sed -n 's#^[^:]*:\([0-9][0-9.]*\)/.*#\1#p')
+# Operation mode: generation mints the whole key under the keybox (works even
+# where the real TEE keystore is unavailable, as on many custom ROMs); patch
+# re-signs the real hardware key. teesim auto-falls-back to generation when
+# hardware is unavailable, so generation is the safe default.
+_mode=$(ks_get teesim_mode generation)
+case "$_mode" in patch|generation) : ;; *) _mode=generation ;; esac
 
 # --- target apps (sanitised into TEESimulator's schema) --------------------
 # build_target.sh already de-dupes and validates; wrap each line as a JSON
@@ -93,9 +106,9 @@ cat > "$TEESIM_CONFIG.tmp" <<EOF
   "profiles": {
     "default": {
       "keybox": "keybox.xml",
-      "mode": "generation",
-      "patchLevel": { "system": "$_sys", "vendor": "$_sys", "boot": "$_sys" },
-      "osVersion": "harvested",
+      "mode": "$_mode",
+      "patchLevel": { "system": "$_sys", "vendor": "$_ven", "boot": "$_boot" },
+      "osVersion": "$_osver",
       "brand": "$_brand",
       "device": "$_device",
       "product": "$_product",

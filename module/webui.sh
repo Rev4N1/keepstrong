@@ -9,6 +9,8 @@
 #   apps-set <b64>    -> replace apps.list from base64
 #   urls-get          -> keybox endpoints, one per line (file + legacy value)
 #   urls-set <b64>    -> replace keybox.urls from base64
+#   hide-get          -> HMA extra hide-list (hma_hide.list)
+#   hide-set <b64>    -> replace hma_hide.list from base64
 #   sync              -> run one full sync, stream the pipeline log
 #   log               -> tail of the log
 #   version           -> module version
@@ -28,20 +30,25 @@ case "$cmd" in
     _dir=$(ks_pif_dir 2>/dev/null) && _kind=$(ks_pif_kind "$_dir" 2>/dev/null) || _kind=none
     _tee=absent; ks_teesim_present && _tee=present
     _hma=absent; ks_hma_present && _hma=present
+    _hmacfg=false; ks_hma_config >/dev/null 2>&1 && _hmacfg=true
     _kb=false; [ -s "$TEESIM_KEYBOX" ] && _kb=true
     printf '{'
     printf '"pif":"%s",' "$_kind"
     printf '"teesim":%s,' "$(_bool "$_tee")"
     printf '"hma":%s,' "$(_bool "$_hma")"
+    printf '"hma_config":%s,' "$_hmacfg"
     printf '"keybox":%s,' "$_kb"
     printf '"last_sync":"%s",' "$(_jesc "$(st_get last_sync)")"
     printf '"enabled":%s,' "$(_bool "$(ks_get enabled 0)")"
     printf '"auto_keybox":%s,' "$(_bool "$(ks_get auto_keybox 0)")"
     printf '"auto_fp_sync":%s,' "$(_bool "$(ks_get auto_fp_sync 0)")"
+    printf '"reassert_pif_flags":%s,' "$(_bool "$(ks_get reassert_pif_flags 0)")"
+    printf '"run_pif_action":%s,' "$(_bool "$(ks_get run_pif_action 0)")"
+    printf '"manage_hma":%s,' "$(_bool "$(ks_get manage_hma 0)")"
+    printf '"restart_gms_on_sync":%s,' "$(_bool "$(ks_get restart_gms_on_sync 0)")"
     printf '"spoof_boot_state":%s,' "$(_bool "$(ks_get spoof_boot_state 0)")"
     printf '"spoof_patch_props":%s,' "$(_bool "$(ks_get spoof_patch_props 0)")"
-    printf '"reassert_pif_flags":%s,' "$(_bool "$(ks_get reassert_pif_flags 0)")"
-    printf '"restart_gms_on_sync":%s,' "$(_bool "$(ks_get restart_gms_on_sync 0)")"
+    printf '"teesim_mode":"%s",' "$(_jesc "$(ks_get teesim_mode generation)")"
     printf '"interval_sec":"%s",' "$(_jesc "$(ks_get interval_sec 3600)")"
     _n=0; [ -f "$KS_DIR/keybox.urls" ] && _n=$(grep -cE '^[[:space:]]*[^#[:space:]]' "$KS_DIR/keybox.urls" 2>/dev/null)
     [ -n "$(ks_get keybox_url)" ] && _n=$((_n + 1))
@@ -65,7 +72,12 @@ case "$cmd" in
     # The list supersedes the single legacy value; clear it to avoid confusion.
     ks_set keybox_url ""
     echo ok ;;
-  sync) sh "$MODDIR/sync.sh" 2>&1; echo "---"; echo "sync complete" ;;
+  hide-get) [ -f "$KS_DIR/hma_hide.list" ] && cat "$KS_DIR/hma_hide.list" || echo "" ;;
+  hide-set)
+    printf '%s' "$1" | base64 -d > "$KS_DIR/hma_hide.list" 2>/dev/null || {
+      _bb=$(ks_busybox); [ -n "$_bb" ] && printf '%s' "$1" | "$_bb" base64 -d > "$KS_DIR/hma_hide.list" 2>/dev/null; }
+    echo ok ;;
+  sync) sh "$MODDIR/sync.sh" action 2>&1; echo "---"; echo "sync complete" ;;
   log) tail -n 200 "$KS_LOGS/keepstrong.log" 2>/dev/null ;;
   version) grep '^version=' "$MODDIR/module.prop" 2>/dev/null | cut -d= -f2 ;;
   *) echo "unknown command: $cmd" >&2; exit 1 ;;

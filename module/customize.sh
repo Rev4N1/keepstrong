@@ -49,6 +49,7 @@ ui_print ""
 
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 for f in common.sh detect.sh sync.sh action.sh service.sh post-fs-data.sh \
-         keybox_fetch.sh pif_sync.sh sync_patch.sh build_target.sh teesim_config.sh webui.sh; do
+         keybox_fetch.sh pif_sync.sh sync_patch.sh build_target.sh teesim_config.sh \
+         hma_sync.sh webui.sh; do
   [ -f "$MODPATH/$f" ] && set_perm "$MODPATH/$f" 0 0 0755
 done

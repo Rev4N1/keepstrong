@@ -91,15 +91,24 @@
   <div class="card">
     <h2>Toggles</h2>
     <div class="row"><div class="lbl"><b>Enabled</b><small>Master switch for the orchestrator</small></div><label class="sw"><input type="checkbox" data-k="enabled"><i></i></label></div>
-    <div class="row"><div class="lbl"><b>Auto keybox</b><small>Pull a fresh keybox hourly</small></div><label class="sw"><input type="checkbox" data-k="auto_keybox"><i></i></label></div>
-    <div class="row"><div class="lbl"><b>Fingerprint sync</b><small>Mirror PIF identity into TEESimulator</small></div><label class="sw"><input type="checkbox" data-k="auto_fp_sync"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Auto keybox</b><small>Pull a keybox from your endpoints</small></div><label class="sw"><input type="checkbox" data-k="auto_keybox"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Fingerprint sync</b><small>Mirror PIF identity + patch into TEESimulator</small></div><label class="sw"><input type="checkbox" data-k="auto_fp_sync"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Run PIF action</b><small>Trigger PlayIntegrityFork's own fetch on Action/boot</small></div><label class="sw"><input type="checkbox" data-k="run_pif_action"><i></i></label></div>
     <div class="row"><div class="lbl"><b>Re-assert PIF flags</b><small>Keep Fork's STRONG spoof flags set</small></div><label class="sw"><input type="checkbox" data-k="reassert_pif_flags"><i></i></label></div>
-    <div class="row"><div class="lbl"><b>Spoof boot state</b><small>Locked / Verified boot props</small></div><label class="sw"><input type="checkbox" data-k="spoof_boot_state"><i></i></label></div>
-    <div class="row"><div class="lbl"><b>Spoof patch props</b><small>Match OS patch to the attested one</small></div><label class="sw"><input type="checkbox" data-k="spoof_patch_props"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Manage HMA-OSS</b><small>Hide root/modules from targets (keeps your config)</small></div><label class="sw"><input type="checkbox" data-k="manage_hma"><i></i></label></div>
     <div class="row"><div class="lbl"><b>Restart GMS on sync</b><small>Bounce DroidGuard + Play Store</small></div><label class="sw"><input type="checkbox" data-k="restart_gms_on_sync"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>TEESimulator mode</b><small>generation (custom ROMs) or patch (real HW key)</small></div>
+      <select id="teesimMode" style="background:var(--surface2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;font-weight:600"><option value="generation">generation</option><option value="patch">patch</option></select></div>
     <label class="field"><span>Refresh interval (seconds)</span>
       <input class="inp" id="interval" inputmode="numeric" placeholder="3600"></label>
     <div class="btns"><button id="saveInterval">Save interval</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Advanced — prop spoofing</h2>
+    <div class="note"><b>Off by default:</b> PlayIntegrityFork already spoofs these. Only enable if PIF isn't covering it on your device.</div>
+    <div class="row"><div class="lbl"><b>Spoof boot state</b><small>Locked / Verified boot props</small></div><label class="sw"><input type="checkbox" data-k="spoof_boot_state"><i></i></label></div>
+    <div class="row"><div class="lbl"><b>Spoof patch props</b><small>Pin OS patch props to the attested one</small></div><label class="sw"><input type="checkbox" data-k="spoof_patch_props"><i></i></label></div>
   </div>
 
   <div class="card">
@@ -107,6 +116,13 @@
     <div class="note">One package per line. GMS, Play Store and GSF are always covered — add anything extra you want attested.</div>
     <textarea class="inp" id="apps" placeholder="com.example.bank&#10;com.example.app" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
     <div class="btns"><button id="saveApps">Save apps</button></div>
+  </div>
+
+  <div class="card">
+    <h2>HMA-OSS — extra apps to hide</h2>
+    <div class="note">Added to the built-in hide-list (root managers, Xposed, HMA). These packages get hidden from the target apps. Needs HMA opened once so it has a config.</div>
+    <textarea class="inp" id="hide" placeholder="com.some.rootapp" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+    <div class="btns"><button id="saveHide">Save hide-list</button></div>
   </div>
 
   <div class="card">
@@ -152,15 +168,17 @@ async function refresh(){
     const s=JSON.parse(r.stdout.trim()||"{}");
     pill($("#pPif"), s.pif&&s.pif!=="none"?"ok":"err", s.pif&&s.pif!=="none"?s.pif:"not found");
     pill($("#pTee"), s.teesim?"ok":"err", s.teesim?"installed":"missing");
-    pill($("#pHma"), s.hma?"ok":"warn", s.hma?"installed":"—");
+    pill($("#pHma"), s.hma?(s.hma_config?"ok":"warn"):"warn", s.hma?(s.hma_config?"config found":"open it once"):"—");
     pill($("#pKb"), s.keybox?"ok":"warn", s.keybox?"present":"none");
     pill($("#pSync"),"", s.last_sync||"never");
     document.querySelectorAll("input[data-k]").forEach(c=>{c.checked=!!s[c.dataset.k];});
     $("#interval").value=s.interval_sec||"3600";
+    if($("#teesimMode")) $("#teesimMode").value=s.teesim_mode||"generation";
   }catch(e){termWrite("ERROR: "+e.message);}
   try{const v=await exec(`${SH} version`);if(v.stdout.trim())$("#ver").textContent=v.stdout.trim()+" · orchestrator";}catch(e){}
   try{const a=await exec(`${SH} apps-get`);$("#apps").value=a.stdout.replace(/\s+$/,"");}catch(e){}
   try{const u=await exec(`${SH} urls-get`);$("#kbUrls").value=u.stdout.replace(/\s+$/,"");}catch(e){}
+  try{const h=await exec(`${SH} hide-get`);$("#hide").value=h.stdout.replace(/\s+$/,"");}catch(e){}
 }
 
 const MIRRORS=[
@@ -196,6 +214,12 @@ $("#saveInterval").onclick=async()=>{
 };
 $("#saveApps").onclick=async()=>{
   await exec(`${SH} apps-set ${b64($("#apps").value)}`);toast("Apps saved");
+};
+$("#saveHide").onclick=async()=>{
+  await exec(`${SH} hide-set ${b64($("#hide").value)}`);toast("Hide-list saved");
+};
+$("#teesimMode").onchange=async()=>{
+  await exec(`${SH} set teesim_mode ${$("#teesimMode").value}`);toast("Mode: "+$("#teesimMode").value);
 };
 $("#syncBtn").onclick=async()=>{
   $("#syncBtn").disabled=true;termWrite("Running sync...");

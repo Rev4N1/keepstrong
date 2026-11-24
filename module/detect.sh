@@ -48,11 +48,19 @@ ks_pif_src() {
 
 ks_teesim_present() { [ -f "$MODULES_BASE/teesim/module.prop" ] || [ -f "${MODULES_BASE}_update/teesim/module.prop" ]; }
 
-# HMA-OSS installs its service data as /data/misc/hide_my_applist<random>.
-ks_hma_present() {
-  for _d in "$MODULES_BASE"/*/module.prop "${MODULES_BASE}_update"/*/module.prop; do
-    [ -f "$_d" ] || continue
-    grep -qiE 'hide.?my.?applist|hma' "$_d" 2>/dev/null && { unset _d; return 0; }
+# HMA-OSS (org.frknkrc44.hma_oss) keeps its config as a single compact-JSON file
+# at /data/misc/hide_my_applist_<random>/config.json, created on first boot /
+# first launch of the HMA app.
+: "${HMAOSS_BASE:=/data/misc}"
+ks_hma_dir() {
+  for _d in "$HMAOSS_BASE"/hide_my_applist*; do
+    [ -d "$_d" ] && { printf '%s' "$_d"; unset _d; return 0; }
   done
   unset _d; return 1
 }
+ks_hma_config() {
+  _hd=$(ks_hma_dir) || { unset _hd; return 1; }
+  [ -f "$_hd/config.json" ] && { printf '%s' "$_hd/config.json"; unset _hd; return 0; }
+  unset _hd; return 1
+}
+ks_hma_present() { ks_hma_dir >/dev/null 2>&1; }

@@ -1,3 +1,14 @@
+# v0.2.0
+
+Aligned to the latest TEESimulator, one-tap full pipeline, and HMA-OSS config.
+
+- **Latest TEESimulator format.** `mode` is configurable (generation/patch, auto-fallback); osVersion now mirrors the PIF Android release; security patch matches the PIF key on all three partitions; `overrides.json` uses the current field names.
+- **Action does everything.** The Action button now also runs PlayIntegrityFork's own fetch (action.sh / autopif4.sh) so Build is fresh before mirroring — one tap: PIF fetch -> keybox -> targets -> patch -> TEESimulator -> HMA -> restart. Hourly skips the PIF fetch to avoid churn.
+- **HMA-OSS config.** Merges a managed hide template into your EXISTING HMA-OSS config (preserving your templates, scope and configVersion, backing it up first). Brace-aware merger bails safely if it can't parse. Extra hide packages in hma_hide.list / the WebUI.
+- **WebUI** gains the Run-PIF-action and Manage-HMA toggles, a TEESimulator mode selector, and an HMA hide-list editor. Every button tested.
+
+Still untested on a device — the on-device STRONG result is the one thing left to confirm.
+
 # v0.1.2
 
 Leaner, less intrusive — stops stepping on your other modules.

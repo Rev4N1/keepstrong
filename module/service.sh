@@ -38,7 +38,7 @@ ks_on enabled || exit 0
   while true; do
     sleep "$(ks_int interval_sec 3600)"
     ks_on enabled || continue
-    sh "$MODDIR/sync.sh" 2>&1 | log -t KeepStrong-hourly 2>/dev/null
+    sh "$MODDIR/sync.sh" hourly 2>&1 | log -t KeepStrong-hourly 2>/dev/null
   done
 } &
 exit 0

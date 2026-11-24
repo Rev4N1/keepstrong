@@ -69,9 +69,12 @@ enabled=1
 auto_keybox=1
 auto_fp_sync=1
 reassert_pif_flags=1
+run_pif_action=1
+manage_hma=1
 restart_gms_on_sync=1
 spoof_boot_state=0
 spoof_patch_props=0
+teesim_mode=generation
 interval_sec=3600
 keybox_url=
 EOF

@@ -19,17 +19,20 @@ else
 fi
 if ks_teesim_present; then echo "  - TEESimulator (JingMatrix): installed"
 else echo "  ! TEESimulator (JingMatrix 'teesim') not found — install it."; fi
-ks_hma_present && echo "  - HMA-OSS: installed"
+if ks_hma_present; then
+  if ks_hma_config >/dev/null 2>&1; then echo "  - HMA-OSS: installed (config found)"
+  else echo "  - HMA-OSS: installed (open it once so it creates a config)"; fi
+fi
 
-if [ -z "$(ks_get keybox_url)" ]; then
-  echo "  ! No keybox endpoint set. Open the WebUI and set 'Keybox URL'."
+if [ -z "$(ks_get keybox_url)" ] && [ ! -f "$KS_DIR/keybox.urls" ]; then
+  echo "  ! No keybox endpoint set. Open the WebUI and add a Keybox URL."
 fi
 if [ ! -s "$TEESIM_KEYBOX" ]; then
   echo "  ! No keybox at $TEESIM_KEYBOX yet."
 fi
 echo
 
-sh "$MODDIR/sync.sh"
+sh "$MODDIR/sync.sh" action
 
 echo
 echo "Done. Verify with a Play Integrity checker (Play Integrity API Checker / YASNAC)."

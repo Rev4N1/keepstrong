@@ -16,17 +16,21 @@ for people who prefer to install and update each piece themselves.
 
 ## What it actually does
 
-On the Action button, at boot, and hourly:
+On the Action button (and boot), it runs the full pipeline; hourly it runs the
+same minus the PIF fetch:
 
-1. **Keybox** — fetches a fresh keybox from **your** endpoint (set `keybox_url`), validates it, and installs it at `/data/adb/teesim/keybox.xml`. Ships no server; raw or base64-encoded XML both accepted.
+0. **PIF action** — triggers PlayIntegrityFork's own `action.sh` / `autopif4.sh` so Build carries a fresh Pixel fingerprint before anything is mirrored (Action/boot only, to avoid hourly churn).
+1. **Keybox** — fetches a keybox from **your** endpoints (a list, tried in order), validates it, installs it at `/data/adb/teesim/keybox.xml`. Ships no server; raw or base64-encoded XML both accepted.
 2. **PIF flags** — re-asserts PlayIntegrityFork's STRONG spoof flags (its autopif keeps resetting `spoofVendingFinger`), version-aware (off on Android ≤ 12L). inject-s is left to manage its own flags.
-3. **Security patch** — derives the attested patch level from the PIF fingerprint and (optionally) pins the OS `ro.*.security_patch` props to match.
-4. **TEESimulator config** — mirrors the PIF-spoofed Pixel identity (brand/model/device/product/manufacturer + patch) into `/data/adb/teesim/config.json`, builds the target-app list, runs the profile in `generation` mode, and writes `/data/adb/teesim/overrides.json` to force a locked/Verified root of trust with a stable non-zero key+hash (so an unlocked bootloader doesn't attest a zeroed ORANGE root).
-5. **Restart** — bounces DroidGuard + Play Store so the new identity takes effect without a reboot.
+3. **Security patch** — derives the attested patch from the PIF fingerprint; TEESimulator's patch level is set to **match the PIF key** on all three partitions.
+4. **TEESimulator config** — mirrors the PIF-spoofed Pixel identity (brand/model/device/product/manufacturer + OS version + patch) into `/data/adb/teesim/config.json`, fills the target-app list, sets the mode, and writes `/data/adb/teesim/overrides.json` to force a locked/Verified root of trust with a stable non-zero key+hash (so an unlocked bootloader doesn't attest a zeroed ORANGE root).
+5. **HMA-OSS** (optional) — merges a managed blacklist template into your **existing** HMA-OSS config so the target apps can't see your root manager / modules / Xposed, preserving your own templates, scope and `configVersion`. Skips cleanly if it can't parse the config.
+6. **Restart** — bounces DroidGuard + Play Store so the new identity takes effect without a reboot.
 
-It never launches TEESimulator's daemon (its own module does that) and never
-touches your keybox outside the fetch. It disables **nothing** — your installs
-are yours.
+It never launches TEESimulator's daemon (its own module does that), never
+touches your keybox outside the fetch, and never edits another module's files
+except HMA-OSS's config (which it merges into, never overwrites). It disables
+**nothing** — your installs are yours.
 
 ## Requirements
 
@@ -59,13 +63,20 @@ Everything lives in `/data/adb/keepstrong/`:
 |---|---|---|
 | `enabled` | 1 | Master switch |
 | `auto_keybox` | 1 | Fetch keybox from your endpoints |
-| `auto_fp_sync` | 1 | Mirror PIF identity into TEESimulator |
+| `auto_fp_sync` | 1 | Mirror PIF identity + patch into TEESimulator |
 | `reassert_pif_flags` | 1 | Keep Fork's STRONG flags set |
+| `run_pif_action` | 1 | Run PlayIntegrityFork's own fetch on Action/boot |
+| `manage_hma` | 1 | Merge the hide template into HMA-OSS's config |
 | `restart_gms_on_sync` | 1 | Bounce DroidGuard + Play Store after a sync |
+| `teesim_mode` | generation | TEESimulator profile mode (`generation` or `patch`) |
 | `spoof_boot_state` | **0** | Locked/Verified boot props — **off: PIF already does this** |
 | `spoof_patch_props` | **0** | Pin OS patch props — **off: PIF already does this** |
 | `interval_sec` | 3600 | Refresh interval |
 | `keybox_url` | *(empty)* | Legacy single endpoint (use the WebUI list / `keybox.urls` instead) |
+
+Endpoints live in `keybox.urls` (one per line, tried in order); extra target
+apps in `apps.list`; extra HMA hide packages in `hma_hide.list`. All editable
+from the WebUI.
 
 ## Footprint — what it touches
 
@@ -74,11 +85,13 @@ KeepStrong is glue, not another spoofer. By default it:
 - **Sets zero system props.** The locked-bootloader / verified-boot / patch
   props are PlayIntegrityFork's job — the two `spoof_*` toggles that would set
   them are **off by default**. Turn one on only if PIF isn't covering it.
-- **Disables / modifies no other module.** It never edits PIF's or
-  TEESimulator's module files; it only writes `/data/adb/teesim/config.json`,
-  `overrides.json` and `keybox.xml` (TEESimulator's own data dir, which is the
-  whole point) and re-asserts the one Fork flag (`spoofVendingFinger`) that
-  PIF's autopif keeps resetting.
+- **Disables no module; edits only data, never module files.** It writes
+  `/data/adb/teesim/{config.json,overrides.json,keybox.xml}` (TEESimulator's own
+  data dir, the whole point), re-asserts the one Fork flag (`spoofVendingFinger`)
+  PIF's autopif keeps resetting, and — if `manage_hma` is on — **merges** a
+  template into HMA-OSS's `config.json`, preserving everything else and backing
+  it up first (`config.json.keepstrong.bak`). If the merge can't parse the
+  config it leaves it untouched. Turn `manage_hma` off to never touch HMA.
 - **Runs one lightweight background loop** (a sleeping shell that re-syncs on
   `interval_sec`). No native daemons, no watchers, no bundled binaries.
 - **Restarts gently:** kills DroidGuard and force-stops the Play Store. It does
