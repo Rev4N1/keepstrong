@@ -1,3 +1,14 @@
+# v0.6.4
+
+- **WebUI laid out like PlayIntegrityFork's:**
+  - Header has the theme toggle (remembered) and a refresh button.
+  - Stack stays open at the top, followed by a Sync card with **Sync now** and
+    **View log**.
+  - Keybox endpoints, Toggles, Advanced, Extra target apps and HMA-OSS are
+    collapsed sections with lighter titles.
+  - Output is its own collapsible section at the bottom, with a fullscreen
+    button; any button that prints opens it.
+
 # v0.6.3
 
 - **WebUI sections collapse**, like PlayIntegrityFork's: tap a section title to

@@ -27,11 +27,11 @@
   .ic{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:6px;border-radius:10px}
   .ic:active{background:var(--surface2)}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
-  .card h2{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .card h2{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:400}
   details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;
-    font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;user-select:none}
+    font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);user-select:none}
   details>summary::-webkit-details-marker{display:none}
-  details>summary .chev{transition:.2s;font-size:.9rem}
+  details>summary .chev{transition:.2s}
   details[open]>summary .chev{transform:rotate(180deg)}
   details[open]>summary{margin-bottom:12px}
   .row{display:flex;align-items:center;gap:10px;padding:9px 0}
@@ -61,8 +61,16 @@
   .btns button:active{opacity:.8}
   #term{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px;margin-top:12px;
     font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.76rem;white-space:pre-wrap;
-    word-break:break-word;max-height:240px;overflow:auto;color:var(--accent-soft)}
+    word-break:break-word;max-height:240px;overflow:auto;color:var(--accent-soft);user-select:text}
   #term .e{color:var(--err)} #term .g{color:var(--ok)} #term .w{color:var(--warn)} #term .m{color:var(--muted)}
+  details[open]>summary+#term{margin-top:0}
+  .out-ctrl{display:flex;align-items:center;gap:6px}
+  #termExpand{display:none;background:none;border:none;color:var(--muted);font-size:1rem;line-height:1;cursor:pointer;padding:2px 6px;margin-right:4px;border-radius:8px}
+  #termExpand:active{background:var(--surface2)}
+  #secOut[open] #termExpand{display:inline-block}
+  #outCard.term-fs{position:fixed;inset:0;z-index:90;margin:0;border-radius:0;border:none;padding:max(env(safe-area-inset-top),14px) 16px max(env(safe-area-inset-bottom),16px)}
+  #outCard.term-fs #term{position:fixed;top:calc(max(env(safe-area-inset-top),14px) + 42px);left:16px;right:16px;bottom:max(env(safe-area-inset-bottom),16px);margin:0;max-height:none;overflow:auto;overscroll-behavior:contain;z-index:91}
+  #outCard.term-fs .chev{display:none}
   .note{font-size:.76rem;color:var(--muted);margin:10px 2px 0;line-height:1.4}
 </style>
 </head>
@@ -74,12 +82,12 @@
       <div class="sub" id="ver">orchestrator</div>
     </div>
     <div class="spacer"></div>
-    <button class="ic" id="themeBtn" title="Theme">◑</button>
+    <button class="ic" id="themeBtn" title="Theme">☾</button>
+    <button class="ic" id="refreshBtn" title="Refresh">⟳</button>
   </header>
 
   <div class="card">
-    <details id="secStack" open>
-    <summary>Stack<span class="chev">▾</span></summary>
+    <h2>Stack</h2>
     <div class="row"><div class="lbl"><b>PlayIntegrityFork</b><small>Build / fingerprint spoof — you install it</small></div><span class="pill" id="pPif">—</span></div>
     <div class="row"><div class="lbl"><b>TEESimulator</b><small>JingMatrix key attestation — you install it</small></div><span class="pill" id="pTee">—</span></div>
     <div class="row"><div class="lbl"><b>HMA-OSS</b><small>Module hiding — optional</small></div><span class="pill" id="pHma">—</span></div>
@@ -87,11 +95,16 @@
     <div class="row"><div class="lbl"><b>Revocation</b><small id="kbSerial">Google attestation status</small></div><span class="pill" id="pRev">—</span></div>
     <div class="row"><div class="lbl"><b>Last sync</b></div><span class="pill" id="pSync">—</span></div>
     <div class="btns"><button id="checkKb">Check revocation now</button></div>
-    </details>
   </div>
 
   <div class="card">
-    <details id="secKeybox" open>
+    <h2>Sync</h2>
+    <div class="note" style="margin-top:0">Runs the full pipeline: PIF fetch, keybox, flags, patch, TEESimulator, HMA-OSS. Same as the Action button.</div>
+    <div class="btns"><button class="primary" id="syncBtn">Sync now</button><button id="logBtn">View log</button></div>
+  </div>
+
+  <div class="card">
+    <details id="secKeybox">
     <summary>Keybox endpoints<span class="chev">▾</span></summary>
     <div class="note">One URL per line, <b>tried in order</b> — put yours first, add mirrors below as fallbacks for when it drops. Raw or base64 XML both accepted. KeepStrong ships no server.</div>
     <textarea class="inp" id="kbUrls" placeholder="https://your-endpoint/key" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
@@ -146,11 +159,10 @@
     </details>
   </div>
 
-  <div class="card">
-    <details id="secRun" open>
-    <summary>Run<span class="chev">▾</span></summary>
-    <div class="btns"><button class="primary" id="syncBtn">Sync now</button><button id="logBtn">View log</button></div>
-    <div id="term"></div>
+  <div class="card" id="outCard">
+    <details id="secOut">
+    <summary>Output<span class="out-ctrl"><button type="button" id="termExpand" title="Fullscreen">⤢</button><span class="chev">▾</span></span></summary>
+    <div id="term"><div class="m">Ready.</div></div>
     </details>
   </div>
 
@@ -186,7 +198,7 @@ function termWrite(text){
 // Every button goes through run(): it opens the Run section so output is
 // visible, and shows any bridge/command error instead of failing silently.
 async function run(fn){
-  $("#secRun").open=true;
+  $("#secOut").open=true;
   try{await fn();}catch(e){termWrite("ERROR: "+(e&&e.message||e));}
   $("#term").scrollIntoView({block:"nearest",behavior:"smooth"});
 }
@@ -273,10 +285,35 @@ $("#logBtn").onclick=()=>run(async()=>{
   const r=await exec(`${SH} log`);
   termWrite(r.stdout.replace(/\s+$/,"")||r.stderr||"(log empty)");
 });
+function applyTheme(t){
+  t=t==="light"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",t);
+  $("#themeBtn").textContent=t==="light"?"☀":"☾";
+}
+try{applyTheme(localStorage.getItem("ks-theme"));}catch(e){applyTheme("dark");}
 $("#themeBtn").onclick=()=>{
-  const cur=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
-  document.documentElement.setAttribute("data-theme",cur);
+  const n=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+  try{localStorage.setItem("ks-theme",n);}catch(e){}
+  applyTheme(n);
 };
+$("#refreshBtn").onclick=()=>{refresh();toast("Refreshed");};
+
+// Output fullscreen, like PlayIntegrityFork's.
+function setTermFs(fs){
+  $("#outCard").classList.toggle("term-fs",fs);
+  $("#termExpand").textContent=fs?"✕":"⤢";
+  document.body.style.overflow=fs?"hidden":"";
+  const t=$("#term");
+  if(fs){
+    $("#secOut").open=true;
+    requestAnimationFrame(()=>{
+      t.style.top=Math.ceil($("#secOut summary").getBoundingClientRect().bottom+12)+"px";
+      t.scrollTop=t.scrollHeight;
+    });
+  }else{t.style.top="";}
+}
+$("#termExpand").onclick=e=>{e.preventDefault();e.stopPropagation();setTermFs(!$("#outCard").classList.contains("term-fs"));};
+$("#secOut").addEventListener("toggle",()=>{if(!$("#secOut").open&&$("#outCard").classList.contains("term-fs"))setTermFs(false);});
 
 document.querySelectorAll("details[id]").forEach(d=>{
   try{const v=localStorage.getItem("ks-"+d.id);if(v!==null)d.open=v==="1";}catch(e){}
