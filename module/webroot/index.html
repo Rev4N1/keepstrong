@@ -81,11 +81,11 @@
   </div>
 
   <div class="card">
-    <h2>Keybox endpoint</h2>
-    <label class="field"><span>Keybox URL</span>
-      <input class="inp" id="kbUrl" placeholder="https://your-endpoint/key" autocapitalize="off" autocomplete="off" spellcheck="false"></label>
-    <div class="note">Your own endpoint. The payload may be raw keybox XML or base64-encoded XML. KeepStrong ships no server.</div>
-    <div class="btns"><button id="saveUrl">Save URL</button><button id="fetchKb">Fetch keybox now</button></div>
+    <h2>Keybox endpoints</h2>
+    <div class="note">One URL per line, <b>tried in order</b> — put yours first, add mirrors below as fallbacks for when it drops. Raw or base64 XML both accepted. KeepStrong ships no server.</div>
+    <textarea class="inp" id="kbUrls" placeholder="https://your-endpoint/key" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+    <div class="btns"><button id="addMirrors">+ Public mirrors</button><button id="saveUrls">Save</button></div>
+    <div class="btns"><button class="primary" id="fetchKb">Fetch keybox now</button></div>
   </div>
 
   <div class="card">
@@ -156,12 +156,18 @@ async function refresh(){
     pill($("#pKb"), s.keybox?"ok":"warn", s.keybox?"present":"none");
     pill($("#pSync"),"", s.last_sync||"never");
     document.querySelectorAll("input[data-k]").forEach(c=>{c.checked=!!s[c.dataset.k];});
-    $("#kbUrl").value=s.keybox_url||"";
     $("#interval").value=s.interval_sec||"3600";
   }catch(e){termWrite("ERROR: "+e.message);}
   try{const v=await exec(`${SH} version`);if(v.stdout.trim())$("#ver").textContent=v.stdout.trim()+" · orchestrator";}catch(e){}
   try{const a=await exec(`${SH} apps-get`);$("#apps").value=a.stdout.replace(/\s+$/,"");}catch(e){}
+  try{const u=await exec(`${SH} urls-get`);$("#kbUrls").value=u.stdout.replace(/\s+$/,"");}catch(e){}
 }
+
+const MIRRORS=[
+  "http://evoker.qzz.io/key",
+  "https://rawbin.dpejoh.com/key",
+  "https://rawbin.dpejoh.workers.dev/key"
+];
 
 document.querySelectorAll("input[data-k]").forEach(c=>{
   c.addEventListener("change",async()=>{
@@ -169,10 +175,15 @@ document.querySelectorAll("input[data-k]").forEach(c=>{
     toast(c.dataset.k+": "+(c.checked?"on":"off"));
   });
 });
-$("#saveUrl").onclick=async()=>{
-  const u=$("#kbUrl").value.trim();
-  await exec(`${SH} set keybox_url "${u.replace(/"/g,'\\"')}"`);
-  toast("Keybox URL saved");
+$("#saveUrls").onclick=async()=>{
+  await exec(`${SH} urls-set ${b64($("#kbUrls").value)}`);
+  toast("Endpoints saved");refresh();
+};
+$("#addMirrors").onclick=()=>{
+  const have=$("#kbUrls").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  MIRRORS.forEach(m=>{if(!have.includes(m))have.push(m);});
+  $("#kbUrls").value=have.join("\n");
+  toast("Mirrors added — review order, then Save");
 };
 $("#fetchKb").onclick=async()=>{
   termWrite("Fetching keybox...");

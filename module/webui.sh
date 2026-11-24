@@ -7,6 +7,8 @@
 #   set KEY VALUE     -> persist a setting
 #   apps-get          -> contents of apps.list
 #   apps-set <b64>    -> replace apps.list from base64
+#   urls-get          -> keybox endpoints, one per line (file + legacy value)
+#   urls-set <b64>    -> replace keybox.urls from base64
 #   sync              -> run one full sync, stream the pipeline log
 #   log               -> tail of the log
 #   version           -> module version
@@ -41,7 +43,9 @@ case "$cmd" in
     printf '"reassert_pif_flags":%s,' "$(_bool "$(ks_get reassert_pif_flags 0)")"
     printf '"restart_gms_on_sync":%s,' "$(_bool "$(ks_get restart_gms_on_sync 0)")"
     printf '"interval_sec":"%s",' "$(_jesc "$(ks_get interval_sec 3600)")"
-    printf '"keybox_url":"%s"' "$(_jesc "$(ks_get keybox_url)")"
+    _n=0; [ -f "$KS_DIR/keybox.urls" ] && _n=$(grep -cE '^[[:space:]]*[^#[:space:]]' "$KS_DIR/keybox.urls" 2>/dev/null)
+    [ -n "$(ks_get keybox_url)" ] && _n=$((_n + 1))
+    printf '"keybox_url_count":%s' "${_n:-0}"
     printf '}\n'
     ;;
   get) ks_get "$1" "$2" ;;
@@ -50,6 +54,16 @@ case "$cmd" in
   apps-set)
     printf '%s' "$1" | base64 -d > "$KS_DIR/apps.list" 2>/dev/null || {
       _bb=$(ks_busybox); [ -n "$_bb" ] && printf '%s' "$1" | "$_bb" base64 -d > "$KS_DIR/apps.list" 2>/dev/null; }
+    echo ok ;;
+  urls-get)
+    # Merge the list file with the legacy single value, de-duplicated.
+    { [ -f "$KS_DIR/keybox.urls" ] && cat "$KS_DIR/keybox.urls"; _lv=$(ks_get keybox_url); [ -n "$_lv" ] && printf '%s\n' "$_lv"; } \
+      | awk 'NF && !/^#/ && !seen[$0]++' ;;
+  urls-set)
+    printf '%s' "$1" | base64 -d > "$KS_DIR/keybox.urls" 2>/dev/null || {
+      _bb=$(ks_busybox); [ -n "$_bb" ] && printf '%s' "$1" | "$_bb" base64 -d > "$KS_DIR/keybox.urls" 2>/dev/null; }
+    # The list supersedes the single legacy value; clear it to avoid confusion.
+    ks_set keybox_url ""
     echo ok ;;
   sync) sh "$MODDIR/sync.sh" 2>&1; echo "---"; echo "sync complete" ;;
   log) tail -n 200 "$KS_LOGS/keepstrong.log" 2>/dev/null ;;

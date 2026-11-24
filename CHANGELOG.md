@@ -1,3 +1,11 @@
+# v0.1.1
+
+- Keybox endpoints are now a **list**, tried in order with fallback — put yours
+  first and add mirrors below for when it drops. WebUI has a multi-line editor
+  and a one-tap "+ Public mirrors" button (AlwaysStrong + Specter keybox URLs).
+- Stored in /data/adb/keepstrong/keybox.urls (one URL per line); the old single
+  keybox_url value still works and is appended.
+
 # v0.1.0
 
 First release. Bring-your-own STRONG orchestrator — bundles nothing, drives your
