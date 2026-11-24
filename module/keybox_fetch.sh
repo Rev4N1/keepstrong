@@ -4,8 +4,8 @@
 # Endpoints come from $KS_DIR/keybox.urls (one URL per line, tried in order),
 # with the legacy single `keybox_url` config value appended if set. The first
 # endpoint that returns a valid keybox wins — so put your own first and add
-# public mirrors below it as fallbacks in case yours drops. KeepStrong ships no
-# default server.
+# public mirrors below it as fallbacks in case yours drops. A fresh install is
+# seeded with public mirrors (see KS_SEED_URLS in common.sh).
 #
 # Each payload may be raw keybox XML or base64-encoded XML (both accepted). A
 # valid keybox is hashed against the on-disk file to avoid needless rewrites,
@@ -61,10 +61,8 @@ _decode_valid() {
 
 if ! ks_check_network; then ks_log "keybox_fetch: no network"; exit 1; fi
 
-_tried=0
 printf '%s\n' "$URLS" | while IFS= read -r URL; do
   [ -n "$URL" ] || continue
-  _tried=$((_tried + 1))
   if ! ks_fetch "$TMP/raw" "$URL"; then
     ks_log "keybox_fetch: download failed ($URL)"; continue
   fi

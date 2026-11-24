@@ -28,7 +28,7 @@ cmd="$1"; shift 2>/dev/null
 case "$cmd" in
   status)
     _dir=$(ks_pif_dir 2>/dev/null) && _kind=$(ks_pif_kind "$_dir" 2>/dev/null) || _kind=none
-    [ "$_kind" = "fork" ] || _kind=none
+    [ "$_kind" = "installed" ] || _kind=none
     _tee=absent; ks_teesim_present && _tee=present
     _hma=absent; ks_hma_present && _hma=present
     _hmacfg=false; ks_hma_config >/dev/null 2>&1 && _hmacfg=true

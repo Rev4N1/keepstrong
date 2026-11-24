@@ -2,10 +2,10 @@
 # KeepStrong — locate the user-installed modules this orchestrator drives.
 # Sourced after common.sh. Defines detection helpers only.
 
-# Only osm0sis PlayIntegrityFork is supported. `playintegrityfork` is its
-# current id; `playintegrityfix` is the id it migrates from, so keep looking
-# there too — ks_pif_kind then rejects anything that is not actually PIFork.
-: "${KS_PIF_IDS:=playintegrityfork playintegrityfix}"
+# Only osm0sis PlayIntegrityFork is supported, under its module id
+# `playintegrityfork`. ks_pif_kind also checks name + author so another module
+# squatting that id is not driven.
+: "${KS_PIF_IDS:=playintegrityfork}"
 
 # ks_pif_dir -> prints the installed/staged PIF module dir, or nothing (rc 1).
 ks_pif_dir() {
@@ -19,10 +19,9 @@ ks_pif_dir() {
   unset _id _base; return 1
 }
 
-# ks_pif_kind DIR -> fork | unknown
-# Identifies osm0sis PlayIntegrityFork by its module name + author, so an
-# impostor squatting the module id (e.g. a keystore toolkit) is not accepted
-# and PlayIntegrityFix / inject-s is not either.
+# ks_pif_kind DIR -> installed | unknown
+# Confirms the module is osm0sis PlayIntegrityFork by its name + author, so an
+# impostor squatting the id (e.g. a keystore toolkit) is not accepted.
 ks_pif_kind() {
   _mp="$1/module.prop"
   [ -f "$_mp" ] || { echo unknown; return 1; }
@@ -32,7 +31,7 @@ ks_pif_kind() {
   _name=$(grep -m1 '^name=' "$_mp" 2>/dev/null | cut -d= -f2-)
   _author=$(grep -m1 '^author=' "$_mp" 2>/dev/null | cut -d= -f2-)
   case "$_name $_author" in
-    *"Play Integrity Fork"*osm0sis*) echo fork ;;
+    *"Play Integrity Fork"*osm0sis*) echo installed ;;
     *)                              echo unknown ;;
   esac
   unset _mp _name _author
@@ -42,7 +41,7 @@ ks_pif_kind() {
 # custom.pif.prop; the legacy custom.pif.json is not mirrored.
 ks_pif_src() {
   _d=$(ks_pif_dir) || { unset _d; return 1; }
-  [ "$(ks_pif_kind "$_d")" = "fork" ] || { unset _d; return 1; }
+  [ "$(ks_pif_kind "$_d")" = "installed" ] || { unset _d; return 1; }
   _c="$_d/custom.pif.prop"
   [ -s "$_c" ] && grep -q '^FINGERPRINT=' "$_c" 2>/dev/null && { printf '%s' "$_c"; unset _d _c; return 0; }
   unset _d _c; return 1

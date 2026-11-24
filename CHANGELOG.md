@@ -1,3 +1,14 @@
+# v0.6.1
+
+- **Only the STRONG flags are touched.** KeepStrong now sets just `spoofBuild=1`,
+  `spoofProps=1` and `spoofVendingFinger` (1 on SDK 33+, 0 on SDK 32 and older).
+  Every other PIFork flag (spoofProvider, spoofSignature, spoofVendingSdk, ...)
+  is left exactly as PIFork wrote it.
+- **Only the `playintegrityfork` id.** The legacy `playintegrityfix` folder is
+  no longer looked at.
+- Status shows **PlayIntegrityFork: installed** instead of the internal "fork".
+- Small cleanups in keybox_fetch.sh (stale comment, unused counter).
+
 # v0.6.0
 
 - **PIFork only.** Dropped PlayIntegrityFix / inject-s support. KeepStrong now

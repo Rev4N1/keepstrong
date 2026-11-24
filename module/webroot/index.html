@@ -169,7 +169,7 @@ async function refresh(){
   try{
     const r=await exec(`${SH} status`);
     const s=JSON.parse(r.stdout.trim()||"{}");
-    pill($("#pPif"), s.pif&&s.pif!=="none"?"ok":"err", s.pif&&s.pif!=="none"?s.pif:"not found");
+    pill($("#pPif"), s.pif&&s.pif!=="none"?"ok":"err", s.pif&&s.pif!=="none"?"installed":"not found");
     pill($("#pTee"), s.teesim?"ok":"err", s.teesim?"installed":"missing");
     pill($("#pHma"), s.hma?(s.hma_config?"ok":"warn"):"warn", s.hma?(s.hma_config?"config found":"open it once"):"—");
     pill($("#pKb"), s.keybox?"ok":"warn", s.keybox?"present":"none");
