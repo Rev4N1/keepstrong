@@ -172,10 +172,17 @@ ks_fetch() {
 }
 
 # -- Restart Play Integrity / DroidGuard so a new identity takes effect -----
-# Deliberately gentle: kill only DroidGuard (the Play Integrity worker) and
-# force-stop the Play Store. We do NOT `pm clear` Vending — that wipes your
-# Play Store login/settings, which is not our call to make on every sync.
+# Delegate to PlayIntegrityFork's own killpi.sh: it ends DroidGuard
+# (com.google.android.gms.unstable) and Play Store (com.android.vending) so they
+# restart on the next attestation. No `pm clear` (that would wipe the Play Store
+# login every sync), and no fallback for other PIF modules — only PIFork is
+# driven, so if its script is missing we leave GMS alone and say so.
 ks_restart_gms() {
-  killall -9 com.google.android.gms.unstable 2>/dev/null
-  am force-stop com.android.vending 2>/dev/null
+  _rpif=$(ks_pif_dir 2>/dev/null) || _rpif=""
+  if [ -n "$_rpif" ] && [ -f "$_rpif/killpi.sh" ]; then
+    sh "$_rpif/killpi.sh" >/dev/null 2>&1
+    unset _rpif; return 0
+  fi
+  ks_log "restart: PIFork killpi.sh not found — GMS/Play Store left running"
+  unset _rpif; return 1
 }

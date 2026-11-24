@@ -38,11 +38,12 @@ _manu=$(_pget MANUFACTURER)
 _model=$(_pget MODEL)
 _device=$(_pget DEVICE)
 _product=$(_pget PRODUCT)
-# Security patch MUST match the PIF fingerprint (the attested device is the
-# Pixel that PIF spoofs into Build; a mismatched patch drops STRONG). All three
-# partitions get the PIF's SECURITY_PATCH. Only when PIF carries none do we fall
-# back to teesim's own "today"/"YYYY-MM-05" defaults.
-_patch=$(_pget SECURITY_PATCH)
+# Security patch MUST match the value PIFork spoofs into
+# ro.build.version.security_patch (the attested device is the Pixel PIF presents
+# to Build; a mismatched patch drops STRONG). All three partitions get it. Only
+# when PIFork carries none do we fall back to teesim's own "today"/"YYYY-MM-05"
+# defaults.
+_patch=$(ks_pif_patch) || _patch=""
 case "$_patch" in
   [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) _sys="$_patch"; _ven="$_patch"; _boot="$_patch" ;;
   *) _sys="today"; _ven="YYYY-MM-05"; _boot="YYYY-MM-05" ;;

@@ -20,12 +20,11 @@ mkdir -p /data/adb/keepstrong 2>/dev/null
 ks_init 2>/dev/null
 
 _missing=0
-if _dir=$(ks_pif_dir 2>/dev/null); then
-  _kind=$(ks_pif_kind "$_dir" 2>/dev/null)
-  ui_print "  [ok] PlayIntegrity engine detected: $_kind"
+if _dir=$(ks_pif_dir 2>/dev/null) && [ "$(ks_pif_kind "$_dir" 2>/dev/null)" = "fork" ]; then
+  ui_print "  [ok] PlayIntegrityFork (osm0sis) detected"
 else
-  ui_print "  [!!] PlayIntegrityFork NOT found."
-  ui_print "       Install osm0sis PlayIntegrityFork, then reboot."
+  ui_print "  [!!] osm0sis PlayIntegrityFork NOT found."
+  ui_print "       Install PlayIntegrityFork, then reboot."
   _missing=1
 fi
 if ks_teesim_present 2>/dev/null; then

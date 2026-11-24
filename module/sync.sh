@@ -29,7 +29,8 @@ ks_say "KeepStrong sync — $MODE"
 
 # Presence summary (for the WebUI/status and the logs).
 _dir=$(ks_pif_dir) && _kind=$(ks_pif_kind "$_dir") || _kind=none
-st_set pif_kind "${_kind:-none}"
+[ "$_kind" = "fork" ] || { _kind=none; _dir=""; }
+st_set pif_kind "$_kind"
 ks_teesim_present && st_set teesim present || st_set teesim absent
 ks_hma_present && st_set hma present || st_set hma absent
 ks_say "  stack: PIF=$_kind  teesim=$(ks_teesim_present && echo yes || echo NO)  hma=$(ks_hma_present && echo yes || echo no)"
@@ -93,7 +94,7 @@ else
 fi
 
 # restart Play Integrity surfaces
-if ks_on restart_gms_on_sync; then ks_say "  restarting DroidGuard + Play Store..."; ks_restart_gms; fi
+if ks_on restart_gms_on_sync; then ks_say "  restarting DroidGuard + Play Store (PIFork killpi.sh)..."; ks_restart_gms; fi
 
 st_set last_sync "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null)"
 ks_say "Sync complete — verify with a Play Integrity checker."

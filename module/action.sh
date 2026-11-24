@@ -11,9 +11,10 @@ echo "KeepStrong — running sync..."
 echo
 
 _dir=$(ks_pif_dir) && _kind=$(ks_pif_kind "$_dir") || _kind=none
+[ "$_kind" = "fork" ] || _kind=none
 if [ "$_kind" = "none" ]; then
   echo "  ! PlayIntegrityFork not found. Install osm0sis PlayIntegrityFork"
-  echo "    (or PlayIntegrityFix inject-s) and tap Action again."
+  echo "    and tap Action again."
 else
   echo "  - PlayIntegrity engine: $_kind"
 fi

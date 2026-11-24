@@ -1,3 +1,19 @@
+# v0.6.0
+
+- **PIFork only.** Dropped PlayIntegrityFix / inject-s support. KeepStrong now
+  drives osm0sis PlayIntegrityFork only, identified by module name + author (not
+  just the directory id), reads only its `custom.pif.prop`, and treats anything
+  else as not installed instead of running its scripts.
+- **Security patch comes from PIFork.** The attested patch is read from
+  `ro.build.version.security_patch` (falling back to `SECURITY_PATCH`) in
+  `custom.pif.prop` — the exact value PIFork spoofs into Build — and the device's
+  own patch is no longer used as a fallback. TEESimulator's `patchLevel` uses the
+  same helper, so system/vendor/boot stay in lockstep with Build.
+- **Restart via PIFork `killpi.sh`.** The end-of-sync bounce now runs PIFork's
+  own `killpi.sh` (DroidGuard + Play Store); the internal `killall` fallback is
+  gone. It runs once, at the end of the pipeline.
+- README documents the exact STRONG flag set KeepStrong re-asserts.
+
 # v0.5.0
 
 - **Keybox revocation check.** After fetching, KeepStrong parses the keybox's

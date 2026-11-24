@@ -2,8 +2,9 @@
 # KeepStrong — locate the user-installed modules this orchestrator drives.
 # Sourced after common.sh. Defines detection helpers only.
 
-# PIF module ids, newest first. osm0sis PlayIntegrityFork ships as
-# `playintegrityfork`; the older/inject lines use `playintegrityfix`.
+# Only osm0sis PlayIntegrityFork is supported. `playintegrityfork` is its
+# current id; `playintegrityfix` is the id it migrates from, so keep looking
+# there too — ks_pif_kind then rejects anything that is not actually PIFork.
 : "${KS_PIF_IDS:=playintegrityfork playintegrityfix}"
 
 # ks_pif_dir -> prints the installed/staged PIF module dir, or nothing (rc 1).
@@ -18,32 +19,48 @@ ks_pif_dir() {
   unset _id _base; return 1
 }
 
-# ks_pif_kind DIR -> fork | inject | unknown
-# Distinguishes osm0sis Fork (spoofVendingFinger flag) from chiteroman/KOWX712
-# inject-s (spoofVendingBuild), and rejects id-squatting keystore toolkits.
+# ks_pif_kind DIR -> fork | unknown
+# Identifies osm0sis PlayIntegrityFork by its module name + author, so an
+# impostor squatting the module id (e.g. a keystore toolkit) is not accepted
+# and PlayIntegrityFix / inject-s is not either.
 ks_pif_kind() {
   _mp="$1/module.prop"
   [ -f "$_mp" ] || { echo unknown; return 1; }
   if grep -qiE 'MeowDump|ntegrity.?[Bb]ox|webuiIcon' "$_mp" 2>/dev/null; then
     echo unknown; unset _mp; return 1
   fi
-  _id="$(grep -m1 '^name=' "$_mp")$(grep -m1 '^updateJson=' "$_mp")$(grep -m1 '^author=' "$_mp")"
-  case "$_id" in
-    *Fork*|*osm0sis*)                          echo fork ;;
-    *Fix*|*[Ii]nject*|*chiteroman*|*KOWX712*)  echo inject ;;
-    *)                                         echo unknown ;;
+  _name=$(grep -m1 '^name=' "$_mp" 2>/dev/null | cut -d= -f2-)
+  _author=$(grep -m1 '^author=' "$_mp" 2>/dev/null | cut -d= -f2-)
+  case "$_name $_author" in
+    *"Play Integrity Fork"*osm0sis*) echo fork ;;
+    *)                              echo unknown ;;
   esac
-  unset _mp _id
+  unset _mp _name _author
 }
 
-# The prop file that actually carries the Pixel FINGERPRINT.
-#   Fork keeps it in custom.pif.prop; inject-s in pif.prop.
+# The prop file that carries the Pixel FINGERPRINT. PIFork uses
+# custom.pif.prop; the legacy custom.pif.json is not mirrored.
 ks_pif_src() {
   _d=$(ks_pif_dir) || { unset _d; return 1; }
-  for _c in "$_d/custom.pif.prop" "$_d/pif.prop"; do
-    [ -s "$_c" ] && grep -q '^FINGERPRINT=' "$_c" 2>/dev/null && { printf '%s' "$_c"; unset _d _c; return 0; }
-  done
+  [ "$(ks_pif_kind "$_d")" = "fork" ] || { unset _d; return 1; }
+  _c="$_d/custom.pif.prop"
+  [ -s "$_c" ] && grep -q '^FINGERPRINT=' "$_c" 2>/dev/null && { printf '%s' "$_c"; unset _d _c; return 0; }
   unset _d _c; return 1
+}
+
+# ks_pif_patch -> the security patch PIFork presents, as YYYY-MM-DD, or
+# nothing (rc 1). PIFork's custom.pif.prop carries both the Build field
+# (SECURITY_PATCH) and the system property (ro.build.version.security_patch)
+# that becomes what DroidGuard sees; the property wins when present.
+ks_pif_patch() {
+  _f=$(ks_pif_src) || { unset _f; return 1; }
+  _p=$(sed -n 's/^ro\.build\.version\.security_patch=//p' "$_f" 2>/dev/null | head -1)
+  [ -n "$_p" ] || _p=$(sed -n 's/^SECURITY_PATCH=//p' "$_f" 2>/dev/null | head -1)
+  _p=$(printf '%s' "$_p" | cut -d'#' -f1 | tr -d ' "\r')
+  _d=$(printf '%s' "$_p" | tr -cd '0-9')
+  [ "${#_d}" -eq 8 ] || { unset _f _p _d; return 1; }
+  printf '%s-%s-%s' "$(printf '%s' "$_d" | cut -c1-4)" "$(printf '%s' "$_d" | cut -c5-6)" "$(printf '%s' "$_d" | cut -c7-8)"
+  unset _f _p _d
 }
 
 ks_teesim_present() { [ -f "$MODULES_BASE/teesim/module.prop" ] || [ -f "${MODULES_BASE}_update/teesim/module.prop" ]; }
