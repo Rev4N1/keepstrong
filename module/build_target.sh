@@ -45,5 +45,5 @@ XPOSED_EXCLUDE="org.lsposed.manager|io.github.lsposed.manager|org.meowcat.edxpos
   fi
 } | tr -d ' \t\r' \
   | grep -E '^(uid:[0-9]+|[A-Za-z0-9_.]+)$' \
-  | grep -Ewv "$XPOSED_EXCLUDE" \
+  | grep -Ev "^($XPOSED_EXCLUDE)$" \
   | awk '!seen[$0]++'

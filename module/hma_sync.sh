@@ -34,7 +34,7 @@ trap 'rm -rf "$TMP"' EXIT INT TERM
 cat > "$TMP/hide" <<'EOF'
 # Root managers
 com.topjohnwu.magisk
-io.github.huskygd.magisk
+io.github.huskydg.magisk
 io.github.vvb2060.magisk
 me.weishu.kernelsu
 com.rifsxd.ksunext

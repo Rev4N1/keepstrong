@@ -1,3 +1,18 @@
+# v0.4.0
+
+- **Everything on by default + public mirrors seeded.** A fresh install enables
+  every feature and pre-seeds the public keybox mirrors (rawbin.dpejoh.com +
+  evoker.qzz.io) into keybox.urls, so it can reach STRONG out of the box; put
+  your own endpoint above them in the WebUI. Prop-spoof toggles are now on too.
+- **Verbose Action.** The Action button / WebUI sync now print a header for every
+  step ([1/6]..[6/6]) with per-step detail, so you can see exactly what is
+  running instead of a silent screen.
+- **Upgrade-safe config.** New settings are merged into an existing config on
+  update without clobbering your choices (so hot-updates keep your settings).
+- Audit fixes: corrected a root-manager package typo in the HMA hide-list
+  (huskydg), and made the Xposed-exclusion match full lines instead of a fragile
+  word match.
+
 # v0.3.0
 
 - **Hot install — no reboot on update.** Flashing a new version over an existing

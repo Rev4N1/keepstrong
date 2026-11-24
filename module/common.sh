@@ -22,16 +22,30 @@
 
 ks_init() {
   mkdir -p "$KS_DIR" "$KS_LOGS" 2>/dev/null
-  [ -f "$KS_CONFIG" ] || ks_write_defaults
+  if [ -f "$KS_CONFIG" ]; then ks_merge_defaults; else ks_write_defaults; fi
   [ -f "$KS_STATE" ] || : > "$KS_STATE"
+  # Public keybox mirrors, seeded once. If you edit or clear the list in the
+  # WebUI the file exists and is never re-seeded.
+  [ -f "$KS_DIR/keybox.urls" ] || ks_seed_urls
 }
 
 # -- Logging ----------------------------------------------------------------
+# ks_log: log file + logcat; also echoed (indented) when KS_VERBOSE=1, which
+# sync.sh sets for Action / WebUI runs so you can watch each step.
 ks_log() {
   mkdir -p "$KS_LOGS" 2>/dev/null
   printf '%s %s\n' "$(date '+%m-%d %H:%M:%S' 2>/dev/null)" "$*" >> "$KS_LOGS/keepstrong.log" 2>/dev/null
-  # Also surface to logcat so `logcat -s KeepStrong` works.
   log -p i -t KeepStrong "$*" 2>/dev/null || true
+  # Verbose echo to stderr so a step's stdout "return value" stays clean while
+  # progress still shows on screen / in the WebUI terminal.
+  [ "${KS_VERBOSE:-0}" = "1" ] && printf '     %s\n' "$*" >&2
+  return 0
+}
+# ks_say: a step header — always printed, also logged.
+ks_say() {
+  printf '%s\n' "$*"
+  printf '%s %s\n' "$(date '+%m-%d %H:%M:%S' 2>/dev/null)" "$*" >> "$KS_LOGS/keepstrong.log" 2>/dev/null
+  return 0
 }
 
 # -- Config store (key=value lines in $KS_CONFIG) ---------------------------
@@ -57,29 +71,45 @@ ks_on() { [ "$(ks_get "$1" 0)" = "1" ]; }
 # ks_int KEY DEFAULT -> integer value or default
 ks_int() { _v=$(ks_get "$1" "$2"); case "$_v" in ''|*[!0-9]*) printf '%s' "$2" ;; *) printf '%s' "$_v" ;; esac; unset _v; }
 
+# The canonical default settings — one "key value" per line. ks_write_defaults
+# writes them all; ks_merge_defaults adds only the ones a pre-existing config is
+# missing (so an update picks up new keys without clobbering your choices).
+KS_DEFAULTS="
+enabled 1
+auto_keybox 1
+auto_fp_sync 1
+reassert_pif_flags 1
+run_pif_action 1
+auto_target 1
+manage_hma 1
+restart_gms_on_sync 1
+spoof_boot_state 1
+spoof_patch_props 1
+teesim_mode generation
+interval_sec 3600
+keybox_url
+"
+# Public keybox mirrors seeded into keybox.urls on first install, so a fresh
+# setup can reach STRONG out of the box. Put your own above these in the WebUI.
+KS_SEED_URLS="https://rawbin.dpejoh.com/key
+https://rawbin.dpejoh.workers.dev/key
+http://evoker.qzz.io/key"
+
 ks_write_defaults() {
   mkdir -p "$KS_DIR" 2>/dev/null
-  cat > "$KS_CONFIG" <<'EOF'
-# KeepStrong settings — one key=value per line. Delete this file to reset.
-#
-# Lean by default: KeepStrong sets ZERO system props out of the box. The two
-# prop-spoof toggles are OFF because PlayIntegrityFork already does that job;
-# only turn one on if PIF somehow isn't covering it on your device.
-enabled=1
-auto_keybox=1
-auto_fp_sync=1
-reassert_pif_flags=1
-run_pif_action=1
-auto_target=1
-manage_hma=1
-restart_gms_on_sync=1
-spoof_boot_state=0
-spoof_patch_props=0
-teesim_mode=generation
-interval_sec=3600
-keybox_url=
-EOF
+  { echo "# KeepStrong settings — one key=value per line. Delete this file to reset."
+    printf '%s\n' "$KS_DEFAULTS" | while read -r _k _v; do
+      [ -n "$_k" ] || continue; printf '%s=%s\n' "$_k" "$_v"
+    done
+  } > "$KS_CONFIG"
 }
+ks_merge_defaults() {
+  printf '%s\n' "$KS_DEFAULTS" | while read -r _k _v; do
+    [ -n "$_k" ] || continue
+    grep -q "^$_k=" "$KS_CONFIG" 2>/dev/null || printf '%s=%s\n' "$_k" "$_v" >> "$KS_CONFIG"
+  done
+}
+ks_seed_urls() { printf '%s\n' "$KS_SEED_URLS" > "$KS_DIR/keybox.urls"; }
 
 # -- Small state store (separate from user config) --------------------------
 st_get() { [ -f "$KS_STATE" ] && sed -n "s/^$1=//p" "$KS_STATE" 2>/dev/null | head -1; }

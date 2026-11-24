@@ -20,50 +20,71 @@ MODDIR=${0%/*}
 . "$MODDIR/detect.sh"
 ks_init
 MODE="${1:-action}"
+# Action / WebUI runs show progress; boot + hourly stay quiet (they go to logcat).
+[ "$MODE" = "action" ] && KS_VERBOSE=1
+export KS_VERBOSE
 
-ks_on enabled || { ks_log "sync: disabled, nothing to do"; exit 0; }
-ks_log "sync: start ($MODE)"
+ks_on enabled || { ks_say "KeepStrong is disabled — nothing to do."; exit 0; }
+ks_say "KeepStrong sync — $MODE"
 
 # Presence summary (for the WebUI/status and the logs).
 _dir=$(ks_pif_dir) && _kind=$(ks_pif_kind "$_dir") || _kind=none
 st_set pif_kind "${_kind:-none}"
 ks_teesim_present && st_set teesim present || st_set teesim absent
 ks_hma_present && st_set hma present || st_set hma absent
+ks_say "  stack: PIF=$_kind  teesim=$(ks_teesim_present && echo yes || echo NO)  hma=$(ks_hma_present && echo yes || echo no)"
 
 # 0. Trigger PlayIntegrityFork's own fetch so Build carries a fresh fingerprint
 #    before we mirror it into TEESimulator. action/boot only (not hourly).
 if ks_on run_pif_action && [ "$_kind" != "none" ] && { [ "$MODE" = "action" ] || [ "$MODE" = "boot" ]; }; then
   if [ -f "$_dir/action.sh" ]; then
-    ks_log "sync: running PlayIntegrityFork action.sh"
+    ks_say "[1/6] PlayIntegrityFork: running its action.sh (fresh fingerprint)..."
     sh "$_dir/action.sh" >/dev/null 2>&1 || true
   elif [ -f "$_dir/autopif4.sh" ]; then
-    ks_log "sync: running PlayIntegrityFork autopif4.sh"
+    ks_say "[1/6] PlayIntegrityFork: running autopif4.sh (fresh fingerprint)..."
     sh "$_dir/autopif4.sh" -m >/dev/null 2>&1 || true
   fi
+else
+  ks_say "[1/6] PlayIntegrityFork fetch: skipped ($MODE)"
 fi
 
 # 1. keybox
 if ks_on auto_keybox; then
-  sh "$MODDIR/keybox_fetch.sh" >/dev/null 2>&1
-  st_set keybox_rc "$?"
+  ks_say "[2/6] Keybox: fetching from your endpoints..."
+  sh "$MODDIR/keybox_fetch.sh"; _kbrc=$?
+  st_set keybox_rc "$_kbrc"
+  case "$_kbrc" in 0) ks_say "      keybox updated";; 2) ks_say "      keybox unchanged / nothing to do";; *) ks_say "      keybox: no update (check endpoints)";; esac
+else
+  ks_say "[2/6] Keybox: auto_keybox off, skipped"
 fi
 
 # 2. PIF flags
 if ks_on auto_fp_sync; then
-  _k=$(sh "$MODDIR/pif_sync.sh" 2>/dev/null); st_set pif_synced "${_k:-none}"
+  ks_say "[3/6] PIF flags: re-asserting STRONG flags..."
+  _k=$(sh "$MODDIR/pif_sync.sh"); st_set pif_synced "${_k:-none}"
+  ks_say "      engine: ${_k:-none}"
+else
+  ks_say "[3/6] PIF flags: auto_fp_sync off, skipped"
 fi
 
 # 3. security patch
-sh "$MODDIR/sync_patch.sh" "$MODE" >/dev/null 2>&1
+ks_say "[4/6] Security patch: matching to the PIF fingerprint..."
+_patch=$(sh "$MODDIR/sync_patch.sh" "$MODE"); ks_say "      attested patch: ${_patch:-unknown}"
 
 # 4. teesim config (identity + patch + targets + root of trust + keybox pickup)
-sh "$MODDIR/teesim_config.sh" >/dev/null 2>&1
+ks_say "[5/6] TEESimulator: writing config + overrides, targeting apps..."
+sh "$MODDIR/teesim_config.sh" >/dev/null; ks_say "      $(ks_teesim_present && echo 'config.json + overrides.json written' || echo 'teesim not installed — skipped')"
 
 # 5. HMA-OSS (optional, preserves your existing config)
-ks_on manage_hma && sh "$MODDIR/hma_sync.sh" >/dev/null 2>&1
+if ks_on manage_hma; then
+  ks_say "[6/6] HMA-OSS: merging hide template into your config..."
+  sh "$MODDIR/hma_sync.sh" >/dev/null
+else
+  ks_say "[6/6] HMA-OSS: manage_hma off, skipped"
+fi
 
-# 6. restart Play Integrity surfaces
-ks_on restart_gms_on_sync && ks_restart_gms
+# restart Play Integrity surfaces
+if ks_on restart_gms_on_sync; then ks_say "  restarting DroidGuard + Play Store..."; ks_restart_gms; fi
 
 st_set last_sync "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null)"
-ks_log "sync: done"
+ks_say "Sync complete — verify with a Play Integrity checker."
