@@ -8,7 +8,7 @@ together:
 
 - **[PlayIntegrityFork](https://github.com/osm0sis/PlayIntegrityFork)** (osm0sis, id `playintegrityfork`) — the Build / fingerprint spoof. Only PIFork is driven; PlayIntegrityFix / inject-s is not supported.
 - **[TEESimulator](https://github.com/JingMatrix/TEESimulator)** (JingMatrix, id `teesim`) — hardware key attestation via an in-process reference KeyMint.
-- **[HMA-OSS](https://github.com/Dr-TSNG/Hide-My-Applist)** (optional) — module/root hiding.
+- **[HMA-OSS](https://github.com/frknkrc44/HMA-OSS)** (frknkrc44, optional) — module/root hiding.
 
 If you want a one-flash bundle that ships these for you, use
 [AlwaysStrong](https://gitlab.com/Evokerr/AlwaysStrong) instead. KeepStrong is
@@ -137,7 +137,7 @@ KeepStrong is glue. The hard parts belong to others:
 - **[osm0sis](https://github.com/osm0sis/PlayIntegrityFork)** — PlayIntegrityFork; its WebUI inspired this one.
 - **[Evokerr / AlwaysStrong](https://gitlab.com/Evokerr/AlwaysStrong)** (GPL-3.0) — the TEESimulator config/overrides shape, the version-aware PIF flag handling and the prop-spoof set are adapted from it.
 - **[chiteroman](https://github.com/chiteroman)** / **[KOWX712](https://github.com/KOWX712)** — Play Integrity Fix lineage.
-- **[Dr-TSNG](https://github.com/Dr-TSNG/Hide-My-Applist)** — HMA-OSS.
+- **[frknkrc44](https://github.com/frknkrc44/HMA-OSS)** — HMA-OSS, the maintained fork of [Dr-TSNG](https://github.com/Dr-TSNG/Hide-My-Applist)'s Hide My Applist.
 
 ## License
 
